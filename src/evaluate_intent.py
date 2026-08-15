@@ -9,6 +9,7 @@ effects being measured.
 Reads:      data/<year>/{targets,pbp_info,pitch_context}.csv.gz
 Writes:     artifacts/intent_eval_<year>.txt
 Run:        python src/evaluate_intent.py [year=2026] [--seeds 5] [--test-frac 0.3]
+                                          [--stability <other year>]
 """
 import sys
 from pathlib import Path
@@ -117,7 +118,28 @@ def subsets(test):
     }
 
 
-def main(year="2026", seeds=5, test_frac=0.3):
+def stability(year, other, min_n=400):
+    """Year-over-year reliability of the per-pitcher gain.
+
+    Within a season the shrinkage says the spread in `s` is ~4x its own standard
+    error, which would put the year-to-year correlation near 0.9 if `s` were a
+    stationary pitcher trait. It isn't, so this is the number that says how much
+    of `tau` is trait and how much is season-specific (catcher mix, park mix,
+    detector quality on that pitcher's clips)."""
+    paths = [DATA / y / "pitcher_gain.csv" for y in (year, other)]
+    if not all(p.exists() for p in paths):
+        return []
+    a, b = (pd.read_csv(p).set_index("pitcher_id") for p in paths)
+    j = a[a["n"] >= min_n].join(b[b["n"] >= min_n], lsuffix="_a", rsuffix="_b", how="inner")
+    if len(j) < 20:
+        return []
+    return ["", f"per-pitcher gain, {year} vs {other} (min {min_n} pitches each season, "
+                f"n = {len(j)} pitchers)",
+            f"  pearson  r(w) = {j['w_a'].corr(j['w_b']):.3f}",
+            f"  spearman r(w) = {j['w_a'].corr(j['w_b'], method='spearman'):.3f}"]
+
+
+def main(year="2026", seeds=5, test_frac=0.3, other_year=None):
     base = DATA / year
     df = il.prepare(pd.read_csv(base / "targets.csv.gz"),
                     pd.read_csv(base / "pbp_info.csv.gz"),
@@ -173,6 +195,9 @@ def main(year="2026", seeds=5, test_frac=0.3):
             lines.append(f"{str(r['pitcher'])[:24]:24s}{int(r['n']):>7d}{r['w']:>8.3f}"
                          f"{r['s']:>8.3f}{r['s_raw']:>8.3f}{r['se']:>8.3f}")
 
+    if other_year:
+        lines += stability(year, other_year)
+
     ART.mkdir(exist_ok=True)
     (ART / f"intent_eval_{year}.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
@@ -183,4 +208,6 @@ if __name__ == "__main__":
     year = argv[0] if argv and not argv[0].startswith("--") else "2026"
     seeds = int(argv[argv.index("--seeds") + 1]) if "--seeds" in argv else 5
     tf = float(argv[argv.index("--test-frac") + 1]) if "--test-frac" in argv else 0.3
-    main(year, seeds, tf)
+    # --stability <year>: needs that season's pitcher_gain.csv from intent_inference.py
+    other = argv[argv.index("--stability") + 1] if "--stability" in argv else None
+    main(year, seeds, tf, other)

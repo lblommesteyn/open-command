@@ -191,7 +191,7 @@ A nice feature of this is that you can tell where the pitcher was *trying* to th
 ### Intent targets: per-pitcher glove gain
 
 The step-3 inferred target says *the glove is the target, up to one constant per
-`pitcher × pitch type`*. Three things in the [caveats](#which-pitchers-are-representedwellworse) break that, and all three are the same
+`pitcher × pitch type`*. Three things in the [caveats](#which-pitchers-are-represented-wellworse) break that, and all three are the same
 kind of break: how much of the glove a pitcher actually uses is a **pitcher-level
 parameter**, not a constant.
 
@@ -238,13 +238,27 @@ Seed-to-seed sd is 0.02-0.05 in every cell, so read that as:
 - **Catcher identity is worth about 0.05 in**, ~10x the per-pitcher gain term. Tango was right to put it in.
 - The **outing** term is the biggest thing left, worth another **0.13 in** on its own — more than every season-level refinement combined. That is the pitcher who has his catcher move the glove to cancel *that day's* bias: it lives entirely within an outing, so no season-level parameter can see it. It is listed in italics because computing it reads the pitcher's other pitches from the same game (never the pitch itself), so it is an **online** estimate, not a held-out-by-game one. Don't compare it to the rows above as if it were.
 
-So the hierarchy does not pay for itself in accuracy. It pays as a **variance
-statement**: `τ(s) = 0.168` with league mean `s = 0.654`, i.e. the spread in how
-much pitchers use the glove is real and about 4x the typical standard error, even
-though knowing a pitcher's own `s` barely moves his miss. Same conclusion the
-2026-07 pooled-offset work reached from the other direction.
+2025 replicates all of it on 651,664 pitches / 2,389 games: naive 10.955, inferred
+9.947, intent 9.747, online 9.620, league `s = 0.619` vs 0.654 (full table in
+`artifacts/intent_eval_2025.txt`).
 
-And the ranking is the interesting output on its own:
+So the hierarchy does not pay for itself in accuracy. It pays as a **variance
+statement**: `τ(s) = 0.168` with league mean `s = 0.654`, i.e. the within-season
+spread in how much pitchers use the glove is about 4x the typical standard error,
+even though knowing a pitcher's own `s` barely moves his miss.
+
+> [!WARNING]
+> That spread is **not** all pitcher trait. Across 267 pitchers with 400+ pitches
+> in both seasons, `w` correlates 2025 → 2026 at only **r = 0.32** (spearman 0.31).
+> Within-season, `τ` vs the standard errors implies a reliability near 0.9, so
+> most of what looks like a stable per-pitcher parameter is season-specific —
+> catcher mix, park mix, and how well the detector does on that pitcher's clips
+> are all folded into `s`. Treat an individual `w` as a noisy season-level
+> descriptor, not a scouting grade. (`--stability <year>` reproduces the number.)
+
+And the ranking is the interesting output on its own. Some familiar names (2026;
+the raw top and bottom 15 are in the artifact, and are mostly low-workload
+relievers at both ends):
 
 | High `w` (own spot) | `w` | | Low `w` (see glove, hit glove) | `w` |
 |---|---:|---|---|---:|
