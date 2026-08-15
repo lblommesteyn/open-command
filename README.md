@@ -256,6 +256,20 @@ even though knowing a pitcher's own `s` barely moves his miss.
 > are all folded into `s`. Treat an individual `w` as a noisy season-level
 > descriptor, not a scouting grade. (`--stability <year>` reproduces the number.)
 
+> [!IMPORTANT]
+> **The published target has already been moved toward the pitch.** The README
+> notes above that "glove detections get post-hoc adjustments based on detection
+> accuracies". That adjustment is per clip and it uses that clip's own measured
+> miss, so `naive_x_in` / `naive_z_in` are not raw glove observations: they are
+> glove observations partially pulled toward the ball. Shrinking the glove toward
+> where the pitch went is *the same operation `s` performs*, which means (a) every
+> absolute miss here, baseline included, is optimistic, and (b) `s` is fit on a
+> glove that is already part ball, which biases it up and folds per-pitcher
+> **measurement quality** into what looks like a per-pitcher behaviour. Consistent
+> with that, `s` correlates −0.31 (2025) / −0.19 (2026) with a pitcher's own median
+> naive miss. Splitting by game does not protect against this, because the leak is
+> within the row. Any published claim about `w` needs the unadjusted target first.
+
 And the ranking is the interesting output on its own. Some familiar names (2026;
 the raw top and bottom 15 are in the artifact, and are mostly low-workload
 relievers at both ends):
@@ -275,6 +289,28 @@ out ~4 standard errors above the league mean without being told anything about h
 > slope is, so the absolute level of `s` is not interpretable — only the ranking is.
 > The `w` form `intent = (1-w)·glove + w·prior` is also implemented (`--form w`) and
 > scores worse (10.106), because it doesn't carry the cell offset on the glove term.
+
+#### Why the convex `w` form does nothing here
+
+An earlier version of this model, fit in July on an older 7,341-pitch / 11-pitcher
+export, used the convex form `intent = (1-w)·glove + w·prior` with a glove-based
+cell prior and put the held-out median at 10.25 → 10.02 (global `w`) → 9.93
+(per-pitcher `w`), with a fitted `w ≈ 0.47`.
+
+Run **that same code** on the current published targets, same 11 pitchers, same
+half/half-by-game protocol:
+
+| | base | global `w` | per-pitcher `w` | fitted `w` |
+|---|---:|---:|---:|---:|
+| July export (7,341 pitches) | 10.25 | 10.02 | 9.93 | 0.47 |
+| published 2025, same 11 | 9.336 | 9.312 | 9.302 | 0.17 |
+| published 2026, same 11 | 9.250 | 9.270 | 9.279 | 0.10 |
+
+The baseline improved by ~1 inch and the entire latent-intent effect went with it.
+The lever was mostly a **measurement**-noise lever, and the upstream detection work
+plus the miss adjustment already collected it. What survives in the gain form on
+those same 11 pitchers is the two-strike × side cell, not the blend: −0.51 in on
+2K breaking/offspeed (2025) against −0.13 in overall.
 
 Run it:
 
