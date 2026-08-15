@@ -59,10 +59,14 @@ raw/gloveball_tracks  raw/strikezone_tracking
             │                                    
             ▼                                    
   3. target_inference.py ──► targets.csv.gz
-            │                                    
-            ▼                                   
-  4. opencommand.py  ──► command_scores.csv
-                        (+ artifacts/validations_<year>.txt)
+            │              │
+            │              └──────────┐  (+ 3a. fetch_pitch_context.py)
+            ▼                         ▼
+  4. opencommand.py        3b. intent_inference.py ──► intent_targets.csv.gz
+     ──► command_scores.csv                     │      pitcher_gain.csv
+     (+ artifacts/validations_<year>.txt)       ▼
+                                       evaluate_intent.py
+                                       (+ artifacts/intent_eval_<year>.txt)
 
 ```
 
@@ -72,7 +76,13 @@ raw/gloveball_tracks  raw/strikezone_tracking
 | 2 | `solve_glove_locations.py` | gloveball_tracks, camera_poses | `glove_locations/<game_pk>.csv.gz` |
 | 3 | `target_inference.py` | glove_locations, pbp_info | `targets.csv.gz` |
 | 4 | `opencommand.py` | targets, pbp_info, camera_poses, fg_pitching | `command_scores.csv` + `artifacts/validations_<year>.txt` |
+| 3a | `fetch_pitch_context.py` | pbp_info (game list) | `pitch_context.csv.gz` *(network; count, side, catcher)* |
+| 3b | `intent_inference.py` | targets, pbp_info, pitch_context | `intent_targets.csv.gz` + `pitcher_gain.csv` |
+| — | `evaluate_intent.py` | targets, pbp_info, pitch_context | `artifacts/intent_eval_<year>.txt` |
 | — | `poselib.py` | (library, not a stage) | imported by steps 1 and 2 |
+| — | `intentlib.py` | (library, not a stage) | imported by step 3b |
+
+> Steps 3a/3b are an optional branch off step 3: the [intent target](#intent-targets-per-pitcher-glove-gain) model.
 
 > Step 1 is particularly heavy (hours); other steps take minutes.
 
@@ -177,6 +187,88 @@ A nice feature of this is that you can tell where the pitcher was *trying* to th
 <p align="center">
   <img src="artifacts/degrom_target_map_2025_example.png" alt="Jacob deGrom inferred targets and actual four-seam locations, 2025" width="720">
 </p>
+
+### Intent targets: per-pitcher glove gain
+
+The step-3 inferred target says *the glove is the target, up to one constant per
+`pitcher × pitch type`*. Three things in the [caveats](#which-pitchers-are-representedwellworse) break that, and all three are the same
+kind of break: how much of the glove a pitcher actually uses is a **pitcher-level
+parameter**, not a constant.
+
+So `intent_inference.py` fits, per pitch, with cell `c` = (pitcher, pitch type, two-strike, batter side, target cluster):
+
+$$\text{intent} = \alpha_c + s_p\,(\text{glove} - \bar{g}_c)$$
+
+- `α_c` — where the pitch actually lands in that cell on the training split (the pitcher's own spot)
+- `ḡ_c` — where the glove sits in that cell
+- `s_p` — the pitcher's **glove gain**: how much of a glove deviation from his own norm carries into intent
+
+`s = 1` recovers the current inferred target (at cell resolution); `s = 0` says the
+glove is decoration. `w = 1 - s` is the "ignores the glove" number.
+
+Fitting `s_p` is a regression through the origin of `(ball - α_c)` on `(glove - ḡ_c)`
+with x and z stacked, which gives a slope **and** a standard error per pitcher for
+free; those feed a normal-normal shrinkage with `τ²` by method of moments, so thin
+samples get pulled to the league gain instead of chasing noise.
+
+Two other terms come along:
+- **target clusters.** One pitch type can have two targets — Hendricks' sinker works both sides, so a single pitch-type mean sits between the clusters and is biased on every pitch. A 1-D Gaussian mixture on the glove cloud splits a `pitcher × pitch type × side` group in two only if it clears a minority share, 8 inches of separation, Ashman *D* ≥ 2, and BIC. Splitting is decided on the **glove**, never the ball, so the same rule assigns a cluster at prediction time.
+- **catcher bias.** A shrunk per-catcher mean of `(ball - glove)`. How a catcher presents is a glove-side measurement bias shared by every pitcher he catches, not command.
+
+#### Results
+
+Held out **by game** (two pitches from one outing share a camera solve, a catcher
+and an umpire, so a pitch-level split leaks), refit on the training games only,
+5 seeds. Median miss, inches, 2026:
+
+| Target | Overall | Fastballs | Breaking/off | 2K breaking/off |
+|---|---:|---:|---:|---:|
+| naive glove | 10.847 | 9.764 | 12.402 | 13.766 |
+| inferred (`pitcher × type` offset) | 9.900 | 9.228 | 10.760 | 11.237 |
+| intent, pooled league `s`, no clusters | 9.763 | 9.202 | 10.520 | 10.935 |
+| intent, per-pitcher `s`, no clusters | 9.759 | 9.192 | 10.507 | 10.917 |
+| **intent, per-pitcher `s` + clusters** | **9.757** | **9.190** | **10.509** | **10.912** |
+| intent, no catcher bias | 9.809 | 9.244 | 10.552 | 10.966 |
+| *+ outing LOO offset (online, see below)* | *9.632* | *9.073* | *10.412* | *10.791* |
+
+Seed-to-seed sd is 0.02-0.05 in every cell, so read that as:
+
+- Intent targets beat the current inferred target by **0.14 in overall** and **0.33 in on two-strike breaking balls**, which is where the glove-is-the-target assumption is worst.
+- **Nearly all of that is the pooled `s ≈ 0.65` and the finer cell**, not the per-pitcher fit. Per-pitcher `s` is worth 0.004 in and clusters another 0.002 — both inside the noise.
+- **Catcher identity is worth about 0.05 in**, ~10x the per-pitcher gain term. Tango was right to put it in.
+- The **outing** term is the biggest thing left, worth another **0.13 in** on its own — more than every season-level refinement combined. That is the pitcher who has his catcher move the glove to cancel *that day's* bias: it lives entirely within an outing, so no season-level parameter can see it. It is listed in italics because computing it reads the pitcher's other pitches from the same game (never the pitch itself), so it is an **online** estimate, not a held-out-by-game one. Don't compare it to the rows above as if it were.
+
+So the hierarchy does not pay for itself in accuracy. It pays as a **variance
+statement**: `τ(s) = 0.168` with league mean `s = 0.654`, i.e. the spread in how
+much pitchers use the glove is real and about 4x the typical standard error, even
+though knowing a pitcher's own `s` barely moves his miss. Same conclusion the
+2026-07 pooled-offset work reached from the other direction.
+
+And the ranking is the interesting output on its own:
+
+| High `w` (own spot) | `w` | | Low `w` (see glove, hit glove) | `w` |
+|---|---:|---|---|---:|
+| Jacob Misiorowski | 0.52 | | Aaron Nola | 0.10 |
+| Jacob deGrom | 0.56 | | Paul Skenes | 0.11 |
+| Trevor Rogers | 0.55 | | Nathan Eovaldi | 0.11 |
+| Shohei Ohtani | 0.44 | | Jhoan Duran | 0.21 |
+
+Misiorowski, the standing example of a pitcher who doesn't look at the glove, comes
+out ~4 standard errors above the league mean without being told anything about him.
+
+> [!NOTE]
+> `s` is attenuated by glove **detection** noise the same way any errors-in-variables
+> slope is, so the absolute level of `s` is not interpretable — only the ranking is.
+> The `w` form `intent = (1-w)·glove + w·prior` is also implemented (`--form w`) and
+> scores worse (10.106), because it doesn't carry the cell offset on the glove term.
+
+Run it:
+
+```
+python src/fetch_pitch_context.py 2026     # count/side/catcher per play_id, ~20 min
+python src/intent_inference.py 2026
+python src/evaluate_intent.py 2026 --seeds 5
+```
 
 ### Command distribution
 
