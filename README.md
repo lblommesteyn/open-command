@@ -2,7 +2,7 @@
 
 <img src="artifacts/banner.png" alt="OpenCommand" width="100%">
 
-[![Version](https://img.shields.io/badge/version-1.0.0-6E7681?style=for-the-badge&labelColor=24292F)](https://github.com/tomdoyo/open-command/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-6E7681?style=for-the-badge&labelColor=24292F)](https://huggingface.co/datasets/tomdoyo/open-command)
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-6E7681?style=for-the-badge&labelColor=24292F)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![GitHub](https://img.shields.io/badge/github.com%2Ftomdoyo%2Fopen--command-00852E?style=for-the-badge&labelColor=24292F)](https://github.com/tomdoyo/open-command)
 
@@ -11,8 +11,7 @@
 </div>
 
 > [!IMPORTANT]  
-> `data/` is currently empty due to large file storage issues.  
-> This will be fixed soon!
+> Git history has been rewritten due to restructuring for large file support. If you have an existing clone or fork, delete it and re-clone.
 
 ## Let's Measure Command
 
@@ -117,6 +116,23 @@ raw/gloveball_tracks  raw/strikezone_tracking
 
 ## Data
 
+### Download
+
+The data lives on Hugging Face.
+
+```
+pip install huggingface_hub
+hf download tomdoyo/open-command --repo-type dataset --local-dir data
+```
+
+That puts the tree where every script expects it. To take one file instead of all of them:
+
+```
+hf download tomdoyo/open-command 2026/command_scores.csv --repo-type dataset --local-dir data
+```
+
+### Layout
+
 Each season lives under `data/<year>/`. 
 
 **Keys:** `(game_pk, play_id)` identify a pitch.
@@ -133,23 +149,21 @@ Raw detections (in `data/<year>/raw/`) are produced using YOLO11 glove/ball/stri
 | `targets.csv.gz` | clip | naive/inferred targets |
 | `command_scores.csv` | pitcher, pitch type | n, naive and inferred median miss |
 
-<sub><sup>1</sup> Means zoom<br>
-
 ### Coverage
 
 OpenCommand tracks nearly all the pitches that it *can*, with most clips lost being due to *no strikezone detected*<sup>1</sup> and *late center field camera cut*<sup>2</sup>.
 
-**For 2025:** 90.06 / 92.82% possible
+**For 2025:** 90.09 / 92.80% possible
 
 | Funnel loss | Clips Lost (%) | Remaining | Coverage |
 |---|---:|---:|---:|
 | All pitches | — | 724,005 | 100.00% |
 | Clip never published | 763 (-0.11%) | 723,242 | 99.89% |
-| No strikezone detected | 30,675 (-4.24%) | 692,567 | 95.66% |
-| No ball release detected | 12,045 (-1.66%) | 680,522 | 93.99% |
-| Late center field camera cut | 20,556 (-2.84%) | 659,966 | 91.15% |
-| Low detection quality | 5,860 (-0.81%) | 654,106 | 90.35% |
-| Implausible target | 2,060 (-0.28%) | **652,046** | **90.06%** |
+| No strikezone detected | 30,447 (-4.21%) | 692,795 | 95.69% |
+| No ball release detected | 11,719 (-1.62%) | 681,076 | 94.07% |
+| Late center field camera cut | 20,888 (-2.89%) | 660,188 | 91.19% |
+| Low detection quality | 5,854 (-0.81%) | 654,334 | 90.38% |
+| Implausible target | 2,055 (-0.28%) | **652,279** | **90.09%** |
 
 <sub><sup>1</sup> Sometimes broadcasts don't draw a strikezone box on the screen<br>
 <sup>2</sup> Sometimes camera cuts to CF-cam (i.e. pitcher-batter view) too late</sub>
@@ -176,29 +190,29 @@ Couple notes:
 
 | Pitch type | Pitchers | Min | p10 | p25 | Median | p75 | p90 | Max |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| All pitches | 716 | 8.41 | 9.86 | 10.43 | 11.07 | 11.89 | 12.76 | 15.95 |
-| Four-seam (FF) | 581 | 7.34 | 8.39 | 9.24 | 10.09 | 10.87 | 11.82 | 14.24 |
-| Sinker (SI) | 380 | 6.20 | 8.52 | 9.21 | 9.94 | 10.98 | 12.16 | 18.36 |
-| Cutter (FC) | 214 | 6.85 | 8.41 | 9.05 | 9.84 | 10.75 | 11.74 | 15.92 |
-| Slider (SL) | 393 | 7.33 | 9.69 | 10.56 | 11.57 | 13.13 | 14.34 | 20.59 |
-| Sweeper (ST) | 230 | 8.71 | 10.04 | 10.96 | 11.96 | 13.40 | 14.54 | 19.64 |
-| Curveball (CU+KC) | 248 | 8.35 | 10.82 | 11.81 | 13.09 | 14.63 | 16.12 | 21.33 |
-| Changeup (CH) | 301 | 8.27 | 10.51 | 11.60 | 12.78 | 14.43 | 16.49 | 28.99 |
-| Splitter (FS) | 95 | 7.58 | 10.66 | 12.14 | 13.71 | 15.74 | 17.31 | 22.29 |
+| All pitches | 716 | 8.39 | 9.85 | 10.42 | 11.06 | 11.88 | 12.75 | 15.94 |
+| Four-seam (FF) | 581 | 7.33 | 8.38 | 9.22 | 10.07 | 10.88 | 11.81 | 14.22 |
+| Sinker (SI) | 380 | 6.10 | 8.50 | 9.18 | 9.92 | 10.95 | 12.14 | 18.34 |
+| Cutter (FC) | 215 | 6.84 | 8.42 | 9.04 | 9.82 | 10.72 | 11.71 | 15.90 |
+| Slider (SL) | 393 | 7.31 | 9.68 | 10.54 | 11.53 | 13.11 | 14.32 | 20.56 |
+| Sweeper (ST) | 230 | 8.66 | 10.01 | 10.92 | 11.95 | 13.38 | 14.51 | 19.65 |
+| Curveball (CU+KC) | 248 | 8.32 | 10.82 | 11.79 | 13.07 | 14.60 | 16.10 | 21.30 |
+| Changeup (CH) | 301 | 8.26 | 10.48 | 11.59 | 12.78 | 14.42 | 16.48 | 28.97 |
+| Splitter (FS) | 95 | 7.59 | 10.65 | 12.11 | 13.70 | 15.73 | 17.28 | 22.26 |
 
 **2025, inferred median miss** — naive + pitcher × pitch-type offset
 
 | Pitch type | Pitchers | Min | p10 | p25 | Median | p75 | p90 | Max |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| All pitches | 716 | 7.38 | 8.93 | 9.45 | 9.99 | 10.57 | 11.14 | 14.56 |
-| Four-seam (FF) | 581 | 6.78 | 8.18 | 8.72 | 9.39 | 10.15 | 10.89 | 12.78 |
-| Sinker (SI) | 380 | 6.10 | 7.98 | 8.52 | 9.12 | 9.90 | 10.68 | 13.42 |
-| Cutter (FC) | 214 | 6.88 | 8.10 | 8.65 | 9.37 | 10.15 | 10.79 | 13.30 |
-| Slider (SL) | 393 | 6.99 | 8.98 | 9.70 | 10.40 | 11.28 | 12.08 | 14.60 |
-| Sweeper (ST) | 230 | 8.12 | 9.40 | 9.90 | 10.67 | 11.53 | 12.43 | 15.03 |
-| Curveball (CU+KC) | 248 | 8.38 | 9.87 | 10.65 | 11.43 | 12.38 | 13.39 | 17.19 |
-| Changeup (CH) | 301 | 7.25 | 9.08 | 9.80 | 10.58 | 11.33 | 12.04 | 14.88 |
-| Splitter (FS) | 95 | 7.40 | 9.32 | 9.97 | 11.00 | 12.08 | 13.13 | 15.59 |
+| All pitches | 716 | 7.37 | 8.91 | 9.43 | 9.97 | 10.56 | 11.13 | 14.54 |
+| Four-seam (FF) | 581 | 6.77 | 8.17 | 8.70 | 9.39 | 10.13 | 10.87 | 12.76 |
+| Sinker (SI) | 380 | 6.09 | 7.99 | 8.49 | 9.11 | 9.88 | 10.65 | 13.40 |
+| Cutter (FC) | 215 | 6.87 | 8.09 | 8.64 | 9.37 | 10.12 | 10.77 | 13.28 |
+| Slider (SL) | 393 | 6.97 | 8.97 | 9.68 | 10.39 | 11.25 | 12.05 | 14.60 |
+| Sweeper (ST) | 230 | 8.11 | 9.39 | 9.88 | 10.66 | 11.51 | 12.46 | 15.01 |
+| Curveball (CU+KC) | 248 | 8.37 | 9.84 | 10.62 | 11.40 | 12.37 | 13.37 | 17.17 |
+| Changeup (CH) | 301 | 7.20 | 9.07 | 9.78 | 10.56 | 11.32 | 12.04 | 14.85 |
+| Splitter (FS) | 95 | 7.41 | 9.30 | 9.96 | 10.99 | 12.06 | 13.12 | 15.56 |
 
 ### Some correlations
 
@@ -206,10 +220,10 @@ Couple notes:
 
 | | Naive | Inferred |
 |---|---:|---:|
-| BB% | +0.457 [+0.367, +0.543] | +0.547 [+0.465, +0.627] |
-| Stuff+ | +0.197 [+0.095, +0.296] | +0.251 [+0.149, +0.345] |
-| xERA | -0.070 [-0.180, +0.036] | -0.068 [-0.173, +0.041] |
-| xERA \| Stuff+ | +0.085 [-0.020, +0.190] | +0.139 [+0.030, +0.245] |
+| BB% | +0.456 [+0.366, +0.541] | +0.547 [+0.465, +0.626] |
+| Stuff+ | +0.198 [+0.096, +0.297] | +0.251 [+0.147, +0.345] |
+| xERA | -0.071 [-0.180, +0.034] | -0.069 [-0.175, +0.039] |
+| xERA \| Stuff+ | +0.085 [-0.022, +0.190] | +0.137 [+0.029, +0.243] |
 
 In particular, we can see a strong correlation between command and walk rates.
 <p align="center">
