@@ -1,0 +1,59 @@
+OpenCommand latent-intent evaluation - 2025 (targets_unadjusted.csv.gz)
+659241 plausible pitches / 2397 games / 870 pitchers
+held out by game, test_frac=0.3, 5 seeds
+
+Median miss (inches), mean over seeds (sd)
+
+variant                                                  overall               fastballs    2K breaking/offspeedpitchers with 800+ pitches
+------------------------------------------------------------------------------------------------------------------------------------------
+naive glove                                         12.119 (0.035)            11.086 (0.042)            15.142 (0.095)            12.016 (0.040)
+repo inferred (pitcher x type offset)               11.016 (0.033)            10.483 (0.031)            12.231 (0.042)            10.853 (0.024)
+gain, pooled league s, no clusters                  10.327 (0.036)             9.957 (0.032)            11.205 (0.049)            10.169 (0.030)
+gain, per-pitcher s, no clusters                    10.302 (0.036)             9.914 (0.030)            11.216 (0.045)            10.140 (0.026)
+gain, per-pitcher s, clusters                       10.278 (0.038)             9.882 (0.035)            11.196 (0.051)            10.109 (0.029)
+gain, clusters, no catcher bias                     10.295 (0.034)             9.905 (0.032)            11.213 (0.045)            10.126 (0.030)
+w form (convex, ball prior)                         10.348 (0.030)            10.001 (0.034)            11.270 (0.040)            10.174 (0.024)
+gain + outing LOO offset (ONLINE)                   10.169 (0.023)             9.751 (0.019)            11.120 (0.049)            10.013 (0.021)
+
+league mean gain s = 0.300   tau(s) = 0.119   (351 two-target (pitcher, pitch type, side) groups)
+
+w = 1 - s.  w near 1: throws to his own spot, glove barely moves intent.
+            w near 0: sees glove, hits glove.
+
+pitcher                       n       w       s   s_raw      se
+--- highest w ---
+Trevor Megill               759   0.967   0.033  -0.015   0.050
+Huascar Brazobán            887   0.955   0.045  -0.012   0.057
+Shohei Ohtani              1045   0.944   0.056  -0.012   0.063
+Ryan Helsley                911   0.940   0.060  -0.018   0.069
+Javier Sanoja               121   0.935   0.065  -0.234   0.135
+Lance McCullers Jr.        1033   0.922   0.078   0.047   0.045
+Aaron Ashby                1083   0.919   0.081   0.045   0.048
+Andrew Chafin               581   0.905   0.095   0.031   0.067
+Brandon Sproat              282   0.899   0.101  -0.032   0.098
+Ryne Stanek                 924   0.891   0.109   0.057   0.062
+Jack Leiter                2333   0.885   0.115   0.087   0.046
+Edwin Díaz                  899   0.884   0.116   0.069   0.060
+Rico Garcia                 566   0.884   0.116   0.042   0.076
+Matt Festa                  760   0.884   0.116   0.073   0.058
+DL Hall                     513   0.883   0.117   0.075   0.057
+--- lowest w ---
+Wade Miley                  152   0.494   0.506   0.654   0.101
+Matt Bowman                 405   0.488   0.512   0.591   0.073
+Bryse Wilson                809   0.485   0.515   0.551   0.049
+Jesse Chavez                159   0.485   0.515   0.618   0.083
+Erik Miller                 426   0.480   0.520   0.658   0.094
+Liam Hendriks               214   0.475   0.525   0.653   0.090
+Jackson Jobe                785   0.473   0.527   0.602   0.069
+Zack Wheeler               2180   0.468   0.532   0.560   0.041
+Chase Petty                 164   0.462   0.538   0.807   0.127
+Caleb Boushley              676   0.455   0.545   0.596   0.055
+Spencer Turnbull            122   0.451   0.549   0.821   0.125
+Troy Melton                 646   0.450   0.550   0.621   0.063
+Scott Effross               148   0.410   0.590   0.833   0.109
+Aaron Civale               1738   0.410   0.590   0.611   0.032
+Brenan Hanifee              887   0.395   0.605   0.675   0.057
+
+per-pitcher gain_unadjusted, 2025 vs 2026 (min 400 pitches each season, n = 269 pitchers)
+  pearson  r(w) = 0.468
+  spearman r(w) = 0.465

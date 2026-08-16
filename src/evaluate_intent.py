@@ -108,17 +108,23 @@ VARIANTS = [
 ]
 
 
+HIGH_N = 800   # a season's worth of work; below this a pitcher's own gain is mostly shrunk
+
+
 def subsets(test):
+    """Slices to score on. The high-n slice matters because a per-pitcher parameter
+    can only pay where it is identified: across all pitchers most of them are thin
+    and get shrunk to the league gain, which dilutes the effect to nothing."""
     brk = test["pgroup"].isin(["BRK", "OFF"])
     return {
         "overall": np.ones(len(test), bool),
         "fastballs": (test["pgroup"] == "FST").to_numpy(),
-        "breaking/offspeed": brk.to_numpy(),
         "2K breaking/offspeed": (brk & (test["two_strike"] == 1)).to_numpy(),
+        f"pitchers with {HIGH_N}+ pitches": (test["pitcher_n"] >= HIGH_N).to_numpy(),
     }
 
 
-def stability(year, other, min_n=400):
+def stability(year, other, tag="", min_n=400):
     """Year-over-year reliability of the per-pitcher gain.
 
     Within a season the shrinkage says the spread in `s` is ~4x its own standard
@@ -126,24 +132,25 @@ def stability(year, other, min_n=400):
     stationary pitcher trait. It isn't, so this is the number that says how much
     of `tau` is trait and how much is season-specific (catcher mix, park mix,
     detector quality on that pitcher's clips)."""
-    paths = [DATA / y / "pitcher_gain.csv" for y in (year, other)]
+    paths = [DATA / y / f"pitcher_gain{tag}.csv" for y in (year, other)]
     if not all(p.exists() for p in paths):
         return []
     a, b = (pd.read_csv(p).set_index("pitcher_id") for p in paths)
     j = a[a["n"] >= min_n].join(b[b["n"] >= min_n], lsuffix="_a", rsuffix="_b", how="inner")
     if len(j) < 20:
         return []
-    return ["", f"per-pitcher gain, {year} vs {other} (min {min_n} pitches each season, "
-                f"n = {len(j)} pitchers)",
+    return ["", f"per-pitcher gain{tag or ' (published targets)'}, {year} vs {other} "
+                f"(min {min_n} pitches each season, n = {len(j)} pitchers)",
             f"  pearson  r(w) = {j['w_a'].corr(j['w_b']):.3f}",
             f"  spearman r(w) = {j['w_a'].corr(j['w_b'], method='spearman'):.3f}"]
 
 
-def main(year="2026", seeds=5, test_frac=0.3, other_year=None):
+def main(year="2026", seeds=5, test_frac=0.3, other_year=None, targets="targets.csv.gz"):
     base = DATA / year
-    df = il.prepare(pd.read_csv(base / "targets.csv.gz"),
+    df = il.prepare(pd.read_csv(base / targets),
                     pd.read_csv(base / "pbp_info.csv.gz"),
                     pd.read_csv(base / "pitch_context.csv.gz"))
+    df["pitcher_n"] = df.groupby("pitcher_id")["pitcher_id"].transform("size")
     print(f"{len(df)} plausible pitches, {df['game_pk'].nunique()} games, "
           f"{df['pitcher_id'].nunique()} pitchers")
 
@@ -162,7 +169,7 @@ def main(year="2026", seeds=5, test_frac=0.3, other_year=None):
         print(f"  seed {seed}: " + "  ".join(
             f"{n.split(',')[0][:12]}={acc[(n, 'overall')][-1]:.2f}" for n in names), flush=True)
 
-    lines = [f"OpenCommand latent-intent evaluation - {year}",
+    lines = [f"OpenCommand latent-intent evaluation - {year} ({targets})",
              f"{len(df)} plausible pitches / {df['game_pk'].nunique()} games / "
              f"{df['pitcher_id'].nunique()} pitchers",
              f"held out by game, test_frac={test_frac}, {seeds} seeds",
@@ -195,11 +202,12 @@ def main(year="2026", seeds=5, test_frac=0.3, other_year=None):
             lines.append(f"{str(r['pitcher'])[:24]:24s}{int(r['n']):>7d}{r['w']:>8.3f}"
                          f"{r['s']:>8.3f}{r['s_raw']:>8.3f}{r['se']:>8.3f}")
 
+    tag = "" if targets == "targets.csv.gz" else "_" + targets.split(".")[0].replace("targets_", "")
     if other_year:
-        lines += stability(year, other_year)
+        lines += stability(year, other_year, tag)
 
     ART.mkdir(exist_ok=True)
-    (ART / f"intent_eval_{year}.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (ART / f"intent_eval_{year}{tag}.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
 
 
@@ -210,4 +218,6 @@ if __name__ == "__main__":
     tf = float(argv[argv.index("--test-frac") + 1]) if "--test-frac" in argv else 0.3
     # --stability <year>: needs that season's pitcher_gain.csv from intent_inference.py
     other = argv[argv.index("--stability") + 1] if "--stability" in argv else None
-    main(year, seeds, tf, other)
+    # --targets swaps the step-3 file, e.g. an unadjusted-glove export
+    tgt = argv[argv.index("--targets") + 1] if "--targets" in argv else "targets.csv.gz"
+    main(year, seeds, tf, other, tgt)

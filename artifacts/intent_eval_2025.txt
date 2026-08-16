@@ -1,19 +1,19 @@
-OpenCommand latent-intent evaluation - 2025
+OpenCommand latent-intent evaluation - 2025 (targets.csv.gz)
 651664 plausible pitches / 2389 games / 870 pitchers
 held out by game, test_frac=0.3, 5 seeds
 
 Median miss (inches), mean over seeds (sd)
 
-variant                                                  overall               fastballs       breaking/offspeed    2K breaking/offspeed
-----------------------------------------------------------------------------------------------------------------------------------------
-naive glove                                         10.955 (0.021)             9.886 (0.026)            12.516 (0.030)            14.116 (0.032)
-repo inferred (pitcher x type offset)                9.947 (0.034)             9.304 (0.036)            10.779 (0.023)            11.322 (0.059)
-gain, pooled league s, no clusters                   9.755 (0.022)             9.248 (0.024)            10.429 (0.022)            10.900 (0.036)
-gain, per-pitcher s, no clusters                     9.749 (0.025)             9.240 (0.028)            10.431 (0.024)            10.892 (0.034)
-gain, per-pitcher s, clusters                        9.747 (0.024)             9.233 (0.027)            10.424 (0.024)            10.885 (0.037)
-gain, clusters, no catcher bias                      9.801 (0.027)             9.290 (0.026)            10.478 (0.023)            10.934 (0.044)
-w form (convex, ball prior)                         10.064 (0.015)             9.622 (0.022)            10.660 (0.028)            11.204 (0.035)
-gain + outing LOO offset (ONLINE)                    9.620 (0.016)             9.107 (0.018)            10.322 (0.020)            10.775 (0.040)
+variant                                                  overall               fastballs    2K breaking/offspeedpitchers with 800+ pitches
+------------------------------------------------------------------------------------------------------------------------------------------
+naive glove                                         10.955 (0.021)             9.886 (0.026)            14.116 (0.032)            10.838 (0.021)
+repo inferred (pitcher x type offset)                9.947 (0.034)             9.304 (0.036)            11.322 (0.059)             9.777 (0.031)
+gain, pooled league s, no clusters                   9.755 (0.022)             9.248 (0.024)            10.900 (0.036)             9.595 (0.021)
+gain, per-pitcher s, no clusters                     9.749 (0.025)             9.240 (0.028)            10.892 (0.034)             9.589 (0.022)
+gain, per-pitcher s, clusters                        9.747 (0.024)             9.233 (0.027)            10.885 (0.037)             9.586 (0.022)
+gain, clusters, no catcher bias                      9.801 (0.027)             9.290 (0.026)            10.934 (0.044)             9.633 (0.028)
+w form (convex, ball prior)                         10.064 (0.015)             9.622 (0.022)            11.204 (0.035)             9.887 (0.014)
+gain + outing LOO offset (ONLINE)                    9.620 (0.016)             9.107 (0.018)            10.775 (0.040)             9.474 (0.018)
 
 league mean gain s = 0.619   tau(s) = 0.152   (350 two-target (pitcher, pitch type, side) groups)
 
@@ -54,6 +54,6 @@ Cade Cavalli                759   0.030   0.970   1.026   0.061
 Tommy Kahnle                951   0.017   0.983   1.130   0.097
 Chase Lee                   519   0.008   0.992   1.126   0.091
 
-per-pitcher gain, 2025 vs 2026 (min 400 pitches each season, n = 267 pitchers)
+per-pitcher gain (published targets), 2025 vs 2026 (min 400 pitches each season, n = 267 pitchers)
   pearson  r(w) = 0.321
   spearman r(w) = 0.308

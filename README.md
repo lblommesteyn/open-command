@@ -219,56 +219,65 @@ Two other terms come along:
 
 Held out **by game** (two pitches from one outing share a camera solve, a catcher
 and an umpire, so a pitch-level split leaks), refit on the training games only,
-5 seeds. Median miss, inches, 2026:
+5 seeds. Median miss, inches.
 
-| Target | Overall | Fastballs | Breaking/off | 2K breaking/off |
+Everything is reported twice, on the **published** targets and on an **unadjusted**
+export of the same clips (raw glove, before the post-hoc detection-accuracy
+adjustment). That is not a stylistic choice: see the box below for why the
+published target cannot answer this question about itself.
+
+**2026** (330,808 clips unadjusted / 326,851 published, 1,236 games, 717 pitchers):
+
+| Target | Unadjusted | | Published | |
 |---|---:|---:|---:|---:|
-| naive glove | 10.847 | 9.764 | 12.402 | 13.766 |
-| inferred (`pitcher × type` offset) | 9.900 | 9.228 | 10.760 | 11.237 |
-| intent, pooled league `s`, no clusters | 9.763 | 9.202 | 10.520 | 10.935 |
-| intent, per-pitcher `s`, no clusters | 9.759 | 9.192 | 10.507 | 10.917 |
-| **intent, per-pitcher `s` + clusters** | **9.757** | **9.190** | **10.509** | **10.912** |
-| intent, no catcher bias | 9.809 | 9.244 | 10.552 | 10.966 |
-| *+ outing LOO offset (online, see below)* | *9.632* | *9.073* | *10.412* | *10.791* |
+| | overall | 800+ pitches | overall | 800+ pitches |
+| naive glove | 12.006 | 11.845 | 10.847 | 10.649 |
+| inferred (`pitcher × type` offset) | 10.941 | 10.637 | 9.900 | 9.575 |
+| intent, pooled league `s`, no clusters | 10.337 | 10.030 | 9.763 | 9.438 |
+| intent, per-pitcher `s`, no clusters | 10.324 | 10.008 | 9.759 | 9.425 |
+| **intent, per-pitcher `s` + clusters** | **10.308** | **9.989** | **9.757** | **9.422** |
+| intent, no catcher bias | 10.320 | 10.004 | 9.809 | 9.473 |
+| *+ outing LOO offset (online)* | *10.200* | *9.897* | *9.632* | *9.334* |
 
-Seed-to-seed sd is 0.02-0.05 in every cell, so read that as:
+2025 replicates every row (`artifacts/intent_eval_2025*.txt`): unadjusted
+12.119 → 11.016 → 10.278, published 10.955 → 9.947 → 9.747. League `s` comes out
+at **0.300 in both seasons** unadjusted, and 0.619/0.654 published.
 
-- Intent targets beat the current inferred target by **0.14 in overall** and **0.33 in on two-strike breaking balls**, which is where the glove-is-the-target assumption is worst.
-- **Nearly all of that is the pooled `s ≈ 0.65` and the finer cell**, not the per-pitcher fit. Per-pitcher `s` is worth 0.004 in and clusters another 0.002 — both inside the noise.
-- **Catcher identity is worth about 0.05 in**, ~10x the per-pitcher gain term. Tango was right to put it in.
-- The **outing** term is the biggest thing left, worth another **0.13 in** on its own — more than every season-level refinement combined. That is the pitcher who has his catcher move the glove to cancel *that day's* bias: it lives entirely within an outing, so no season-level parameter can see it. It is listed in italics because computing it reads the pitcher's other pitches from the same game (never the pitch itself), so it is an **online** estimate, not a held-out-by-game one. Don't compare it to the rows above as if it were.
+Seed-to-seed sd is 0.02-0.05, so, on the unadjusted targets:
 
-2025 replicates all of it on 651,664 pitches / 2,389 games: naive 10.955, inferred
-9.947, intent 9.747, online 9.620, league `s = 0.619` vs 0.654 (full table in
-`artifacts/intent_eval_2025.txt`).
+- Intent targets beat the current inferred target by **0.63 in overall** and **0.90 in on two-strike breaking balls**, which is where the glove-is-the-target assumption is worst. On the published targets the same model shows 0.14 in, because most of the effect has already been applied upstream.
+- **Nearly all of it is the pooled `s ≈ 0.30` and the finer cell**, not the per-pitcher fit. Per-pitcher `s` is worth 0.013 in, clusters 0.016 in, catcher identity 0.012 in. Restricting to pitchers with 800+ pitches, where a per-pitcher parameter is actually identified, moves it to 0.022 in — better, still small.
+- The **outing** term is the biggest single add-on at **0.108 in**, more than the per-pitcher, cluster and catcher terms combined. That is the pitcher who has his catcher move the glove to cancel *that day's* bias: it lives entirely within an outing, so no season-level parameter can see it. It is in italics because computing it reads the pitcher's other pitches from the same game (never the pitch itself), so it is an **online** estimate, not a held-out-by-game one.
 
-So the hierarchy does not pay for itself in accuracy. It pays as a **variance
-statement**: `τ(s) = 0.168` with league mean `s = 0.654`, i.e. the within-season
-spread in how much pitchers use the glove is about 4x the typical standard error,
-even though knowing a pitcher's own `s` barely moves his miss.
+So the hierarchy still does not pay for itself in accuracy. It pays as a **variance
+statement**: `τ(s) = 0.133` around a league mean of 0.300, i.e. the within-season
+spread in how much pitchers use the glove is several times the typical standard
+error, even though knowing a pitcher's own `s` barely moves his miss.
 
 > [!WARNING]
-> That spread is **not** all pitcher trait. Across 267 pitchers with 400+ pitches
-> in both seasons, `w` correlates 2025 → 2026 at only **r = 0.32** (spearman 0.31).
-> Within-season, `τ` vs the standard errors implies a reliability near 0.9, so
-> most of what looks like a stable per-pitcher parameter is season-specific —
-> catcher mix, park mix, and how well the detector does on that pitcher's clips
-> are all folded into `s`. Treat an individual `w` as a noisy season-level
-> descriptor, not a scouting grade. (`--stability <year>` reproduces the number.)
+> That spread is **not** all pitcher trait. Across 269 pitchers with 400+ pitches
+> in both seasons, `w` correlates 2025 → 2026 at **r = 0.47** unadjusted (and only
+> 0.32 on published targets). Within-season, `τ` vs the standard errors implies a
+> reliability far above that, so a real part of what looks like a stable
+> per-pitcher parameter is season-specific: catcher mix, park mix, and how well the
+> detector does on that pitcher's clips all land in `s`. Treat an individual `w` as
+> a noisy season-level descriptor, not a scouting grade.
+> (`--stability <year>` reproduces the number.)
 
 > [!IMPORTANT]
-> **The published target has already been moved toward the pitch.** The README
-> notes above that "glove detections get post-hoc adjustments based on detection
-> accuracies". That adjustment is per clip and it uses that clip's own measured
-> miss, so `naive_x_in` / `naive_z_in` are not raw glove observations: they are
-> glove observations partially pulled toward the ball. Shrinking the glove toward
-> where the pitch went is *the same operation `s` performs*, which means (a) every
-> absolute miss here, baseline included, is optimistic, and (b) `s` is fit on a
-> glove that is already part ball, which biases it up and folds per-pitcher
-> **measurement quality** into what looks like a per-pitcher behaviour. Consistent
-> with that, `s` correlates −0.31 (2025) / −0.19 (2026) with a pitcher's own median
-> naive miss. Splitting by game does not protect against this, because the leak is
-> within the row. Any published claim about `w` needs the unadjusted target first.
+> **The published target has already been moved toward the pitch, and it moves `s`.**
+> The README notes above that "glove detections get post-hoc adjustments based on
+> detection accuracies". That adjustment is per clip and sized from that clip's own
+> measured miss, so `naive_x_in` / `naive_z_in` are not raw glove observations: they
+> are glove observations pulled toward the ball, a median of **1.15 in** and capped
+> around 2.5 in. Shrinking the glove toward where the pitch went is *the same
+> operation `s` performs*, so fitting `s` on published targets is fitting it on a
+> glove that is already part ball. Measured against the unadjusted export, that
+> roughly halves the apparent glove weight (`s` = 0.65/0.62 published vs **0.300**
+> unadjusted, both seasons), shrinks the model's own gain from 0.63 in to 0.14 in,
+> and drags `w`'s year-over-year correlation from 0.47 down to 0.32. Splitting by
+> game does not protect against any of it, because the leak is inside the row.
+> **Fit `w` on unadjusted targets or not at all.**
 
 And the ranking is the interesting output on its own. Some familiar names (2026;
 the raw top and bottom 15 are in the artifact, and are mostly low-workload
@@ -290,35 +299,47 @@ out ~4 standard errors above the league mean without being told anything about h
 > The `w` form `intent = (1-w)·glove + w·prior` is also implemented (`--form w`) and
 > scores worse (10.106), because it doesn't carry the cell offset on the glove term.
 
-#### Why the convex `w` form does nothing here
+#### The adjustment, isolated
 
-An earlier version of this model, fit in July on an older 7,341-pitch / 11-pitcher
-export, used the convex form `intent = (1-w)·glove + w·prior` with a glove-based
-cell prior and put the held-out median at 10.25 → 10.02 (global `w`) → 9.93
-(per-pitcher `w`), with a fitted `w ≈ 0.47`.
-
-Run **that same code** on the current published targets, same 11 pitchers, same
-half/half-by-game protocol:
+An earlier version of this model, fit in July on a 7,341-pitch / 11-pitcher export
+that predates the adjustment, used the convex form `intent = (1-w)·glove + w·prior`
+with a glove-based cell prior. Running **that same code**, same 11 pitchers, same
+half/half-by-game protocol, is a clean A/B on the target file alone:
 
 | | base | global `w` | per-pitcher `w` | fitted `w` |
 |---|---:|---:|---:|---:|
 | July export (7,341 pitches) | 10.25 | 10.02 | 9.93 | 0.47 |
-| published 2025, same 11 | 9.336 | 9.312 | 9.302 | 0.17 |
 | published 2026, same 11 | 9.250 | 9.270 | 9.279 | 0.10 |
+| **unadjusted 2026, same 11** | **10.258** | **9.993** | **9.877** | **0.44** |
 
-The baseline improved by ~1 inch and the entire latent-intent effect went with it.
-The lever was mostly a **measurement**-noise lever, and the upstream detection work
-plus the miss adjustment already collected it. What survives in the gain form on
-those same 11 pitchers is the two-strike × side cell, not the blend: −0.51 in on
-2K breaking/offspeed (2025) against −0.13 in overall.
+On published targets the ladder is flat and `w` collapses to 0.10. On the
+unadjusted export of the *same clips* it comes back and lands within 0.05 in of
+the July numbers on every rung, with `τ = 0.272` against July's 0.268. The effect
+was never absent; the target had absorbed it.
+
+Two things worth noting from that table. The per-pitcher rung beats the global one
+by 0.12 in there, against 0.02 in in the gain form on the same clean data: coarser
+cells (pitch *group*, no clusters) leave more for a per-pitcher parameter to do, so
+the two compete for the same variance rather than stacking. And per-pitcher `w`
+agreement with the July fit runs **0.79 pearson** on unadjusted targets versus 0.55
+on published — Misiorowski 0.87 vs 0.84, Mason Miller 0.77 vs 0.72, Skenes 0.52 vs
+0.47, with Yamamoto (0.61 vs 0.23) the one real disagreement.
 
 Run it:
 
 ```
 python src/fetch_pitch_context.py 2026     # count/side/catcher per play_id, ~20 min
 python src/intent_inference.py 2026
-python src/evaluate_intent.py 2026 --seeds 5
+python src/evaluate_intent.py 2026 --seeds 5 --stability 2025
+
+# against an unadjusted-glove export dropped in as data/2026/targets_unadjusted.csv.gz
+python src/intent_inference.py 2026 --targets targets_unadjusted.csv.gz
+python src/evaluate_intent.py 2026 --targets targets_unadjusted.csv.gz --stability 2025
 ```
+
+The unadjusted export is not part of the public release; the numbers above come
+from one supplied by the maintainer. Everything on the published targets
+reproduces from the Hugging Face data as-is.
 
 ### Command distribution
 

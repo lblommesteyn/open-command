@@ -28,13 +28,14 @@ import intentlib as il
 DATA = Path(__file__).resolve().parents[1] / "data"
 
 
-def main(year="2026", form="gain"):
+def main(year="2026", form="gain", targets="targets.csv.gz"):
     base = DATA / year
     ctx_path = base / "pitch_context.csv.gz"
     if not ctx_path.exists():
         sys.exit(f"missing {ctx_path} - run: python src/fetch_pitch_context.py {year}")
+    tag = "" if targets == "targets.csv.gz" else "_" + targets.split(".")[0].replace("targets_", "")
 
-    df = il.prepare(pd.read_csv(base / "targets.csv.gz"),
+    df = il.prepare(pd.read_csv(base / targets),
                     pd.read_csv(base / "pbp_info.csv.gz"),
                     pd.read_csv(ctx_path))
     model = il.fit(df, form=form)
@@ -53,7 +54,7 @@ def main(year="2026", form="gain"):
     out["miss_inferred_in"] = il.miss(df, df["inferred_x_in"].to_numpy(),
                                       df["inferred_z_in"].to_numpy())
     out["miss_intent_in"] = il.miss(df, ix, iz)
-    out.to_csv(base / "intent_targets.csv.gz", index=False, lineterminator="\n",
+    out.to_csv(base / f"intent_targets{tag}.csv.gz", index=False, lineterminator="\n",
                compression={"method": "gzip", "compresslevel": 6})
 
     gain = pd.DataFrame({"gain_s": model["gain"], "gain_s_raw": model["gain_raw"],
@@ -61,7 +62,7 @@ def main(year="2026", form="gain"):
     gain["w"] = 1 - gain["gain_s"]
     gain["pitcher"] = df.drop_duplicates("pitcher_id").set_index("pitcher_id")["pitcher"]
     gain.index.name = "pitcher_id"
-    gain.sort_values("n", ascending=False).to_csv(base / "pitcher_gain.csv",
+    gain.sort_values("n", ascending=False).to_csv(base / f"pitcher_gain{tag}.csv",
                                                  lineterminator="\n")
 
     print(f"intent targets: {len(out)} clips, {len(model['clusters'])} two-target groups")
@@ -75,4 +76,5 @@ if __name__ == "__main__":
     argv = sys.argv[1:]
     year = argv[0] if argv and not argv[0].startswith("--") else "2026"
     form = argv[argv.index("--form") + 1] if "--form" in argv else "gain"
-    main(year, form)
+    tgt = argv[argv.index("--targets") + 1] if "--targets" in argv else "targets.csv.gz"
+    main(year, form, tgt)
