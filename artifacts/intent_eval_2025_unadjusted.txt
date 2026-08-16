@@ -13,6 +13,9 @@ gain, per-pitcher s, no clusters                    10.302 (0.036)             9
 gain, per-pitcher s, clusters                       10.278 (0.038)             9.882 (0.035)            11.196 (0.051)            10.109 (0.029)
 gain, clusters, no catcher bias                     10.295 (0.034)             9.905 (0.032)            11.213 (0.045)            10.126 (0.030)
 w form (convex, ball prior)                         10.348 (0.030)            10.001 (0.034)            11.270 (0.040)            10.174 (0.024)
+gain, full count in the cell                        10.264 (0.034)             9.880 (0.034)            11.181 (0.064)            10.090 (0.024)
+gain + prev-pitch correction                        10.245 (0.033)             9.847 (0.030)            11.167 (0.038)            10.074 (0.024)
+gain + prev-pitch, per-pitcher gamma                10.251 (0.034)             9.853 (0.031)            11.184 (0.048)            10.075 (0.023)
 gain + outing LOO offset (ONLINE)                   10.169 (0.023)             9.751 (0.019)            11.120 (0.049)            10.013 (0.021)
 
 league mean gain s = 0.300   tau(s) = 0.119   (351 two-target (pitcher, pitch type, side) groups)

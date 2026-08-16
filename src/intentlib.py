@@ -74,13 +74,16 @@ def prepare(targets, pbp, ctx):
     t = targets[targets["plausible"] & (targets["status"] == "ok")].copy()
     info = pbp.set_index("play_id")[["date", "pitcher_id", "pitcher", "pitch_type"]]
     t = t.join(info, on="play_id")
-    c = ctx.set_index("play_id")[["stand", "p_throws", "catcher", "pre_balls", "pre_strikes"]]
+    c = ctx.set_index("play_id")[["stand", "p_throws", "catcher", "pre_balls", "pre_strikes",
+                                  "ab_number", "pitch_number"]]
     t = t.join(c, on="play_id")
 
     t = t.dropna(subset=["pitch_type", "pitcher_id", "stand", "naive_x_in", "naive_z_in",
                          "plate_x_in", "plate_z_in"])
     t["pgroup"] = t["pitch_type"].map(PITCH_GROUP).fillna("OFF")
     t["two_strike"] = (t["pre_strikes"].fillna(0) >= 2).astype(int)
+    t["count"] = (t["pre_balls"].fillna(0).astype(int).astype(str) + "-"
+                  + t["pre_strikes"].fillna(0).astype(int).astype(str))
     t["catcher"] = t["catcher"].fillna(-1).astype("int64")
     t["pitcher_id"] = t["pitcher_id"].astype("int64")
     # glove_* is the observed target, plate_* is where the ball ended up
@@ -272,6 +275,45 @@ def apply_catcher_bias(df, bias):
     b = bias.reindex(df["catcher"].to_numpy()).fillna(0.0)
     return (df["glove_x"].to_numpy() + b["rx"].to_numpy(),
             df["glove_z"].to_numpy() + b["rz"].to_numpy())
+
+
+def prev_pitch_residual(df, resid_x, resid_z):
+    """Each pitch's *previous* pitch's residual, within the same plate appearance.
+
+    This is the handle on "microadjusts from the same glove position": a pitcher
+    whose glove never moves can still be correcting his own aim pitch to pitch, and
+    the only observable trace of that is whether he responds to where the last one
+    actually went. Uses strictly earlier pitches, so unlike the outing offset it is
+    causally clean and can sit in a held-out table."""
+    o = df[["pitcher_id", "game_pk", "ab_number", "pitch_number"]].copy()
+    o["rx"], o["rz"] = resid_x, resid_z
+    o["_i"] = np.arange(len(o))
+    o = o.sort_values(["game_pk", "ab_number", "pitch_number"], kind="stable")
+    key = ["game_pk", "ab_number"]
+    same_pa = o.groupby(key, sort=False)
+    prev_x = same_pa["rx"].shift(1)
+    prev_z = same_pa["rz"].shift(1)
+    out_x = np.zeros(len(o))
+    out_z = np.zeros(len(o))
+    out_x[o["_i"].to_numpy()] = prev_x.fillna(0.0).to_numpy()
+    out_z[o["_i"].to_numpy()] = prev_z.fillna(0.0).to_numpy()
+    has = np.zeros(len(o), bool)
+    has[o["_i"].to_numpy()] = prev_x.notna().to_numpy()
+    return out_x, out_z, has
+
+
+def fit_prev_gamma(df, resid_x, resid_z, per_pitcher=False):
+    """Slope of this pitch's residual on the previous pitch's residual, through the
+    origin, x and z stacked. Negative gamma = he corrects; positive = he repeats."""
+    px, pz, has = prev_pitch_residual(df, resid_x, resid_z)
+    d = np.concatenate([px[has], pz[has]])
+    r = np.concatenate([resid_x[has], resid_z[has]])
+    if not per_pitcher:
+        return float((d * r).sum() / max((d * d).sum(), 1e-9))
+    pid = np.concatenate([df["pitcher_id"].to_numpy()[has]] * 2)
+    fr = pd.DataFrame({"pid": pid, "dd": d * d, "dr": d * r})
+    g = fr.groupby("pid").sum()
+    return (g["dr"] / g["dd"].replace(0, np.nan)).clip(-1.0, 1.0)
 
 
 def outing_offsets(df, resid_x, resid_z):

@@ -78,6 +78,43 @@ def v_gain_nocatcher(train, test):
     return il.predict(il.fit(train, form="gain", catcher_bias=False), test)
 
 
+def v_gain_fullcount(train, test):
+    """Cell carries the full count instead of just the two-strike flag."""
+    saved = il.CELL_KEYS[:]
+    il.CELL_KEYS[2] = "count"
+    try:
+        return il.predict(il.fit(train, form="gain"), test)
+    finally:
+        il.CELL_KEYS[:] = saved
+
+
+def _prev_correction(train, test, per_pitcher):
+    """Tom's 'microadjusts from the same glove position': does a pitcher respond to
+    where his own last pitch went, beyond what the glove and the cell already say?
+
+    gamma is fit on train residuals and applied to the held-out pitch using only
+    the previous pitch of the same plate appearance, so no future information."""
+    model = il.fit(train, form="gain")
+    tx, tz = il.predict(model, train)
+    gamma = il.fit_prev_gamma(train, train["ball_x"].to_numpy() - tx,
+                              train["ball_z"].to_numpy() - tz, per_pitcher)
+    ex, ez = il.predict(model, test)
+    px, pz, has = il.prev_pitch_residual(test, test["ball_x"].to_numpy() - ex,
+                                         test["ball_z"].to_numpy() - ez)
+    g = (test["pitcher_id"].map(gamma).fillna(0.0).to_numpy() if per_pitcher
+         else np.full(len(test), gamma))
+    g = np.where(has, g, 0.0)
+    return ex + g * px, ez + g * pz
+
+
+def v_gain_prev(train, test):
+    return _prev_correction(train, test, False)
+
+
+def v_gain_prev_pp(train, test):
+    return _prev_correction(train, test, True)
+
+
 def v_gain_outing(train, test):
     """ONLINE variant: after the held-out prediction, shift each outing by the
     leave-one-out mean residual of that pitcher's *other* pitches that game.
@@ -104,6 +141,9 @@ VARIANTS = [
     ("gain, per-pitcher s, clusters", v_gain),
     ("gain, clusters, no catcher bias", v_gain_nocatcher),
     ("w form (convex, ball prior)", v_w_form),
+    ("gain, full count in the cell", v_gain_fullcount),
+    ("gain + prev-pitch correction", v_gain_prev),
+    ("gain + prev-pitch, per-pitcher gamma", v_gain_prev_pp),
     ("gain + outing LOO offset (ONLINE)", v_gain_outing),
 ]
 

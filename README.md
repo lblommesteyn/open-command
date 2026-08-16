@@ -249,6 +249,45 @@ Seed-to-seed sd is 0.02-0.05, so, on the unadjusted targets:
 - **Nearly all of it is the pooled `s ≈ 0.30` and the finer cell**, not the per-pitcher fit. Per-pitcher `s` is worth 0.013 in, clusters 0.016 in, catcher identity 0.012 in. That is not a sample-size artifact, and restricting to pitchers with 800+ pitches barely changes it (0.022 in); see [the per-pitcher section](#the-per-pitcher-term-does-not-survive-season-scale).
 - The **outing** term is the biggest single add-on at **0.108 in**, more than the per-pitcher, cluster and catcher terms combined. That is the pitcher who has his catcher move the glove to cancel *that day's* bias: it lives entirely within an outing, so no season-level parameter can see it. It is in italics because computing it reads the pitcher's other pitches from the same game (never the pitch itself), so it is an **online** estimate, not a held-out-by-game one.
 
+#### Microadjustment: pitchers repeat their miss, they don't correct it
+
+A pitcher can work from one glove position and still be moving his own aim pitch to
+pitch. The glove can't see that, so the only observable trace is whether he responds
+to where his *last* pitch actually went. Fit `gamma`, the slope of this pitch's
+residual on the previous pitch's residual **within the same plate appearance**,
+through the origin, x and z stacked. Unlike the outing offset this uses strictly
+earlier pitches, so it is causally clean and belongs in the held-out table.
+
+`gamma = +0.066`. It is *positive*: a pitcher slightly **repeats** his last miss
+rather than correcting it. Whatever is happening inside a plate appearance, it is
+not a correction loop.
+
+Held out, 2026 / 2025 unadjusted, against the 10.308 / 10.278 model:
+
+| | 2026 | 2025 |
+|---|---:|---:|
+| full count in the cell instead of the 2K flag | 10.309 | 10.264 |
+| + within-PA correction (global `gamma`) | 10.269 | 10.245 |
+| + within-PA correction (per-pitcher `gamma`) | 10.273 | 10.251 |
+
+Conditioning the cell on the full count is worth nothing over the two-strike flag
+(and makes 2K breaking *worse* on 2026, at 11.320 against 11.263, which is the finer
+cells starting to overfit). The within-PA term is worth a real but small 0.04 in,
+and per-pitcher `gamma` is again slightly worse than one league number.
+
+And it is not separate from the outing offset. Stacking them on 2026:
+
+| | median miss | vs base |
+|---|---:|---:|
+| gain model | 10.310 | |
+| + within-PA correction | 10.270 | −0.041 |
+| + outing offset | 10.201 | −0.109 |
+| + both | 10.193 | −0.117 |
+
+The within-PA term adds 0.008 in once the outing offset is in. They are the same
+persistent within-game bias measured over two window lengths, and the longer window
+captures nearly all of it. **There is one within-game effect worth chasing, not two.**
+
 #### The per-pitcher term does not survive season scale
 
 It is tempting to read the small per-pitcher number as a sample-size problem:
