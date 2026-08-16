@@ -246,23 +246,50 @@ at **0.300 in both seasons** unadjusted, and 0.619/0.654 published.
 Seed-to-seed sd is 0.02-0.05, so, on the unadjusted targets:
 
 - Intent targets beat the current inferred target by **0.63 in overall** and **0.90 in on two-strike breaking balls**, which is where the glove-is-the-target assumption is worst. On the published targets the same model shows 0.14 in, because most of the effect has already been applied upstream.
-- **Nearly all of it is the pooled `s ≈ 0.30` and the finer cell**, not the per-pitcher fit. Per-pitcher `s` is worth 0.013 in, clusters 0.016 in, catcher identity 0.012 in. Restricting to pitchers with 800+ pitches, where a per-pitcher parameter is actually identified, moves it to 0.022 in — better, still small.
+- **Nearly all of it is the pooled `s ≈ 0.30` and the finer cell**, not the per-pitcher fit. Per-pitcher `s` is worth 0.013 in, clusters 0.016 in, catcher identity 0.012 in. That is not a sample-size artifact, and restricting to pitchers with 800+ pitches barely changes it (0.022 in); see [the per-pitcher section](#the-per-pitcher-term-does-not-survive-season-scale).
 - The **outing** term is the biggest single add-on at **0.108 in**, more than the per-pitcher, cluster and catcher terms combined. That is the pitcher who has his catcher move the glove to cancel *that day's* bias: it lives entirely within an outing, so no season-level parameter can see it. It is in italics because computing it reads the pitcher's other pitches from the same game (never the pitch itself), so it is an **online** estimate, not a held-out-by-game one.
 
-So the hierarchy still does not pay for itself in accuracy. It pays as a **variance
-statement**: `τ(s) = 0.133` around a league mean of 0.300, i.e. the within-season
-spread in how much pitchers use the glove is several times the typical standard
-error, even though knowing a pitcher's own `s` barely moves his miss.
+#### The per-pitcher term does not survive season scale
 
-> [!WARNING]
-> That spread is **not** all pitcher trait. Across 269 pitchers with 400+ pitches
-> in both seasons, `w` correlates 2025 → 2026 at **r = 0.47** unadjusted (and only
-> 0.32 on published targets). Within-season, `τ` vs the standard errors implies a
-> reliability far above that, so a real part of what looks like a stable
-> per-pitcher parameter is season-specific: catcher mix, park mix, and how well the
-> detector does on that pitcher's clips all land in `s`. Treat an individual `w` as
-> a noisy season-level descriptor, not a scouting grade.
-> (`--stability <year>` reproduces the number.)
+It is tempting to read the small per-pitcher number as a sample-size problem:
+most pitchers are thin, they get shrunk to the league gain, the effect dilutes.
+That is not what is happening. Sliced by how many pitches a pitcher actually threw
+(2025, unadjusted, same protocol):
+
+| pitcher season volume | pitches | pooled `s` | per-pitcher `s` | delta |
+|---|---:|---:|---:|---:|
+| <200 | 30,953 | 11.626 | 11.621 | −0.005 |
+| 200-400 | 54,342 | 10.969 | 10.953 | −0.015 |
+| 400-800 | 156,424 | 10.642 | 10.635 | −0.006 |
+| 800-1500 | 300,140 | 10.316 | 10.304 | −0.012 |
+| 1500+ | 448,128 | 9.987 | 9.977 | −0.011 |
+
+It is worth about a hundredth of an inch at **every** volume, including workhorse
+starters with 1,500+ pitches where the slope is estimated tightly. Giving a pitcher
+his own glove weight does not measurably improve his target.
+
+The convex form makes the same point through `τ`. On the 11-pitcher July set it
+fits `τ = 0.27`; run unchanged on the full 2025 season it fits **`τ = 0.027`**, and
+per-pitcher `w` beats global `w` by 0.008 in:
+
+| 2025 unadjusted, convex form | all 870 pitchers | 11-pitcher subset |
+|---|---:|---:|
+| base | 11.063 | 10.258 |
+| global `w` | 10.508 | 9.993 |
+| per-pitcher `w` | 10.500 | 9.877 |
+| fitted `τ` | **0.027** | 0.272 |
+
+So the between-pitcher spread that looked like the headline was mostly a property
+of eleven hand-picked pitchers. At season scale the pitchers who ignore the glove
+are real but rare, and averaging over 870 of them leaves a population that is
+described well by one number.
+
+**What survives at season scale is the pooled blend and the cell structure**, not
+the hierarchy: global `w` alone is worth 0.555 in in the convex form, and the gain
+form's finer cells take it to 0.744 in with per-pitcher `s` contributing 0.010 of
+that. Keep `w` as a descriptive per-pitcher statistic if it is interesting on its
+own terms — Misiorowski really does come out at 0.87 — but it is not a modelling
+win, and `w` correlates only 0.47 season to season even unadjusted.
 
 > [!IMPORTANT]
 > **The published target has already been moved toward the pitch, and it moves `s`.**
@@ -317,13 +344,12 @@ unadjusted export of the *same clips* it comes back and lands within 0.05 in of
 the July numbers on every rung, with `τ = 0.272` against July's 0.268. The effect
 was never absent; the target had absorbed it.
 
-Two things worth noting from that table. The per-pitcher rung beats the global one
-by 0.12 in there, against 0.02 in in the gain form on the same clean data: coarser
-cells (pitch *group*, no clusters) leave more for a per-pitcher parameter to do, so
-the two compete for the same variance rather than stacking. And per-pitcher `w`
-agreement with the July fit runs **0.79 pearson** on unadjusted targets versus 0.55
-on published — Misiorowski 0.87 vs 0.84, Mason Miller 0.77 vs 0.72, Skenes 0.52 vs
-0.47, with Yamamoto (0.61 vs 0.23) the one real disagreement.
+Per-pitcher `w` agreement with the July fit also runs **0.79 pearson** on unadjusted
+targets versus 0.55 on published: Misiorowski 0.87 vs 0.84, Mason Miller 0.77 vs
+0.72, Skenes 0.52 vs 0.47, with Yamamoto (0.61 vs 0.23) the one real disagreement.
+
+Note the per-pitcher rung beats the global one by 0.12 in on these eleven, which
+does **not** generalise: see the next section.
 
 Run it:
 
