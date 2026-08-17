@@ -79,6 +79,8 @@ raw/gloveball_tracks  raw/strikezone_tracking
 | 3a | `fetch_pitch_context.py` | pbp_info (game list) | `pitch_context.csv.gz` *(network; count, side, catcher)* |
 | 3b | `intent_inference.py` | targets, pbp_info, pitch_context | `intent_targets.csv.gz` + `pitcher_gain.csv` |
 | — | `evaluate_intent.py` | targets, pbp_info, pitch_context | `artifacts/intent_eval_<year>.txt` |
+| — | `validate_intent.py` | + fg_pitching | `artifacts/intent_validity_<year>.txt` |
+| — | `season_drift.py` | targets, pbp_info, pitch_context | `artifacts/season_drift_<year>.txt` |
 | — | `poselib.py` | (library, not a stage) | imported by steps 1 and 2 |
 | — | `intentlib.py` | (library, not a stage) | imported by step 3b |
 
@@ -239,6 +241,13 @@ published target cannot answer this question about itself.
 | intent, no catcher bias | 10.320 | 10.004 | 9.809 | 9.473 |
 | *+ outing LOO offset (online)* | *10.200* | *9.897* | *9.632* | *9.334* |
 
+The gain is **flat across the season** and survives a forward split, which
+held-out-by-game does not test since it interleaves April with September. 2025
+unadjusted, monthly medians under one model: naive stays inside a 0.16 in band from
+March to October and the gain over inferred never leaves −0.75 to −0.85 in. Fitting
+on the first 40% of the calendar and scoring the remaining 1,394 games still gives
+−0.748 in, and −0.785 in at a 70% cut (`artifacts/season_drift_2025_unadjusted.txt`).
+
 2025 replicates every row (`artifacts/intent_eval_2025*.txt`): unadjusted
 12.119 → 11.016 → 10.278, published 10.955 → 9.947 → 9.747. League `s` comes out
 at **0.300 in both seasons** unadjusted, and 0.619/0.654 published.
@@ -248,6 +257,48 @@ Seed-to-seed sd is 0.02-0.05, so, on the unadjusted targets:
 - Intent targets beat the current inferred target by **0.63 in overall** and **0.90 in on two-strike breaking balls**, which is where the glove-is-the-target assumption is worst. On the published targets the same model shows 0.14 in, because most of the effect has already been applied upstream.
 - **Nearly all of it is the pooled `s ≈ 0.30` and the finer cell**, not the per-pitcher fit. Per-pitcher `s` is worth 0.013 in, clusters 0.016 in, catcher identity 0.012 in. That is not a sample-size artifact, and restricting to pitchers with 800+ pitches barely changes it (0.022 in); see [the per-pitcher section](#the-per-pitcher-term-does-not-survive-season-scale).
 - The **outing** term is the biggest single add-on at **0.108 in**, more than the per-pitcher, cluster and catcher terms combined. That is the pitcher who has his catcher move the glove to cancel *that day's* bias: it lives entirely within an outing, so no season-level parameter can see it. It is in italics because computing it reads the pitcher's other pitches from the same game (never the pitch itself), so it is an **online** estimate, not a held-out-by-game one.
+
+#### It buys inches and no validity
+
+Fewer inches is necessary but not sufficient. A target can shave miss by absorbing
+real command into itself and describe pitchers *worse*. The correlations in
+[Some correlations](#some-correlations) are the acceptance test, so
+`validate_intent.py` reuses `opencommand.corr_ci` and the same population
+(≥ 100 scored pitches, ≥ 50 IP, 339 pitchers in 2025) rather than reimplementing
+them. The intent column is cross-fit over 5 folds by game, because it has far more
+parameters than a per-pitcher-per-pitch-type offset and an in-sample column would
+flatter it.
+
+Two correlations should never be compared through their separate CIs when they
+share the same pitchers, so the table that matters is the **paired** difference on
+common resamples. 2025, unadjusted targets:
+
+| | spearman Δ | pearson Δ |
+|---|---:|---:|
+| BB% | +0.033 [−0.005, +0.073] | +0.031 [−0.005, +0.069] |
+| Stuff+ | −0.008 [−0.052, +0.036] | +0.002 [−0.040, +0.044] |
+| xERA | −0.004 [−0.047, +0.038] | −0.005 [−0.050, +0.038] |
+| xERA \| Stuff+ | −0.013 [−0.060, +0.034] | −0.005 [−0.053, +0.042] |
+
+Every interval covers zero. BB% is the only one that leans positive and it does not
+replicate on 2026 (+0.014 [−0.056, +0.082]). Adding the outing offset does not help
+either (BB% +0.021 [−0.018, +0.061]). On the published targets the deltas are flat
+to slightly negative.
+
+**So the model removes 0.8 in of miss and does not reorder pitchers.** That is not
+a contradiction, it is the arithmetic: a per-pitcher median over hundreds to
+thousands of pitches has already averaged away per-pitch noise, so removing more of
+it cannot move that pitcher's number relative to anyone else's. Only a
+**per-pitcher-varying bias** can.
+
+Which is exactly what the one historically successful step did. Going naive →
+inferred lifts BB% from +0.456 to +0.547, and that step *is* a per-pitcher
+correction. Everything the intent model adds on top is within-pitcher refinement:
+better cells, a better blend, a within-game offset. All of it makes each pitch's
+target more accurate and none of it changes who ranks above whom.
+
+If the goal is validity rather than inches, that is the design brief: look for terms
+that differ **between** pitchers and are currently being charged to their command.
 
 #### Microadjustment: pitchers repeat their miss, they don't correct it
 

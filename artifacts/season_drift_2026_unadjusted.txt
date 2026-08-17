@@ -1,0 +1,22 @@
+OpenCommand season drift and forward validity - 2026 (targets_unadjusted.csv.gz)
+
+1. MONTHLY MEDIAN MISS (one model fit on the whole season)
+
+       month   pitches     naive  inferred    intent  gain vs inf
+  ---------------------------------------------------------------
+     2026-03     18596    12.269    10.883    10.032       -0.851
+     2026-04    101167    12.108    10.744     9.983       -0.761
+     2026-05    107076    11.980    10.635     9.925       -0.710
+     2026-06    103728    11.882    10.675     9.984       -0.690
+     2026-07       241    12.043    11.117    10.109       -1.008
+
+  month-to-month spread of the intent median: 0.184 in (min 9.925 2026-05, max 10.109 2026-07)
+
+2. FORWARD SPLIT (fit on the first X% of the season by date, score the rest)
+
+     train  test games     naive  inferred    intent  gain vs inf
+  ---------------------------------------------------------------
+       40%         759    11.931    11.215    10.546       -0.669
+       50%         637    11.932    11.166    10.500       -0.666
+       60%         504    11.910    11.105    10.466       -0.639
+       70%         377    11.875    11.057    10.425       -0.632
