@@ -1,0 +1,14 @@
+OpenCommand glove-gain level sweep - 2026 (targets_unadjusted.csv.gz)
+  held out by game, 5 seeds, test_frac=0.3
+
+  gain fit at                 groups   overall  vs league  2K brk/off     tau
+  ---------------------------------------------------------------------------
+  league                           1    10.312     +0.000      11.277   0.010
+  pitcher                        696    10.310     -0.002      11.265   0.134
+  pgroup                           3    10.297     -0.015      11.252   0.128
+  pitch_type                      16    10.294     -0.018      11.248   0.177
+  pitch_type_2k                   31    10.292     -0.020      11.251   0.154
+  pitch_type_side                 32    10.293     -0.019      11.246   0.130
+  pitch_type_cluster              21    10.293     -0.019      11.248   0.180
+  pitch_type_side_cluster         40    10.293     -0.020      11.245   0.150
+  pitcher_pitch_type            3155    10.291     -0.022      11.255   0.181

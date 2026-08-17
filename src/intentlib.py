@@ -331,10 +331,38 @@ def outing_offsets(df, resid_x, resid_z):
 
 
 # --- the model -------------------------------------------------------------
-def fit(df, catcher_bias=True, form="gain", prior="ball"):
+# What the glove gain is allowed to vary over. "pitcher" was the original premise
+# and it does not survive season scale; the pitch-type and cluster levels ask
+# instead whether the gain is a property of the PITCH rather than the man throwing
+# it, e.g. whether a glove that moves for a slider means less than one that moves
+# for a four-seam, or whether an arm-side target is chased harder than a glove-side one.
+GAIN_LEVELS = {
+    "league": [],
+    "pitcher": ["pitcher_id"],
+    "pgroup": ["pgroup"],
+    "pitch_type": ["pitch_type"],
+    "pitch_type_2k": ["pitch_type", "two_strike"],
+    "pitch_type_side": ["pitch_type", "stand"],
+    "pitch_type_cluster": ["pitch_type", "cluster"],
+    "pitch_type_side_cluster": ["pitch_type", "stand", "cluster"],
+    "pitcher_pitch_type": ["pitcher_id", "pitch_type"],
+}
+
+
+def _gain_key(df, keys):
+    """One hashable key per row for whatever level the gain is fit at."""
+    if not keys:
+        return pd.Series(0, index=df.index)
+    if len(keys) == 1:
+        return df[keys[0]]
+    return pd.Series(list(zip(*(df[k] for k in keys))), index=df.index)
+
+
+def fit(df, catcher_bias=True, form="gain", prior="ball", level="pitcher"):
     """Fit the whole thing on a training frame. `form` is "gain" (centered,
     the default) or "w" (Luke's convex form). `prior` picks what the pitcher is
-    shrunk toward in the "w" form: his own ball spot or his own glove spot."""
+    shrunk toward in the "w" form: his own ball spot or his own glove spot.
+    `level` is the grouping the gain is fit at, see GAIN_LEVELS."""
     df = df.copy()
     bias = fit_catcher_bias(df) if catcher_bias else None
     if bias is not None:
@@ -354,7 +382,8 @@ def fit(df, catcher_bias=True, form="gain", prior="ball"):
         tz = ref["alpha_z"] if prior == "ball" else ref["gbar_z"]
         d = np.concatenate([tx - df["glove_x"], tz - df["glove_z"]])
         r = np.concatenate([df["ball_x"] - df["glove_x"], df["ball_z"] - df["glove_z"]])
-    pid = np.concatenate([df["pitcher_id"].to_numpy()] * 2)
+    keys = GAIN_LEVELS[level]
+    pid = np.concatenate([_gain_key(df, keys).to_numpy()] * 2)
 
     fr = pd.DataFrame({"pid": pid, "d": d, "r": r, "dd": d * d, "dr": d * r})
     g = fr.groupby("pid").agg(n=("d", "size"), sdd=("dd", "sum"), sdr=("dr", "sum"))
@@ -375,9 +404,9 @@ def fit(df, catcher_bias=True, form="gain", prior="ball"):
     shrunk = (raw * prec_d + mu * prec_p) / (prec_d + prec_p)
     shrunk = shrunk.where(ok, mu).fillna(mu)
 
-    return {"form": form, "prior": prior, "clusters": clusters, "cells": cells,
-            "catcher_bias": bias, "gain": shrunk, "gain_raw": raw, "gain_se": se,
-            "gain_n": g["n"] // 2, "mu": mu, "tau": float(np.sqrt(tau2))}
+    return {"form": form, "prior": prior, "level": level, "clusters": clusters,
+            "cells": cells, "catcher_bias": bias, "gain": shrunk, "gain_raw": raw,
+            "gain_se": se, "gain_n": g["n"] // 2, "mu": mu, "tau": float(np.sqrt(tau2))}
 
 
 def predict(model, df):
@@ -387,7 +416,8 @@ def predict(model, df):
         df["glove_x"], df["glove_z"] = apply_catcher_bias(df, model["catcher_bias"])
     df["cluster"] = assign_clusters(df, model["clusters"])
     ref = _lookup(df, model["cells"])
-    s = df["pitcher_id"].map(model["gain"]).fillna(model["mu"]).to_numpy()
+    key = _gain_key(df, GAIN_LEVELS[model.get("level", "pitcher")])
+    s = key.map(model["gain"]).fillna(model["mu"]).to_numpy()
 
     if model["form"] == "gain":
         ix = ref["alpha_x"].to_numpy() + s * (df["glove_x"].to_numpy() - ref["gbar_x"].to_numpy())

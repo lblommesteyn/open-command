@@ -352,6 +352,48 @@ The within-PA term adds 0.008 in once the outing offset is in. They are the same
 persistent within-game bias measured over two window lengths, and the longer window
 captures nearly all of it. **There is one within-game effect worth chasing, not two.**
 
+#### The gain belongs to the pitch, not the pitcher
+
+If the gain isn't a property of the man, is it a property of the pitch? A catcher
+sets up on a breaking ball where he expects to *receive* it, after break, so a glove
+that moves six inches on a curveball need not mean the same as one that moves six
+inches on a four-seam. `gain_level_sweep.py` refits `s` at every grouping.
+
+The fitted gains, raw targets, pitch types with 2,000+ pitches:
+
+| pitch | `s` 2025 | `s` 2026 |
+|---|---:|---:|
+| FF four-seam | 0.425 | 0.409 |
+| FC cutter | 0.365 | 0.359 |
+| SI sinker | 0.329 | 0.320 |
+| SL slider | 0.204 | 0.199 |
+| ST sweeper | 0.185 | 0.180 |
+| CU curve | 0.146 | 0.114 |
+| KC knuckle-curve | 0.142 | 0.122 |
+| FS splitter | 0.141 | 0.132 |
+| CH change | 0.137 | 0.151 |
+
+Monotone, physical, and it **replicates season to season at r = 0.994**, against
+0.47 for the per-pitcher gain. The glove is worth about three times as much on a
+four-seam as on a curveball or a changeup. That is the cleanest descriptive result
+here: how much the glove tells you is a property of the *pitch*.
+
+Held out, though, no grouping is an accuracy lever:
+
+| gain fit at | groups | 2025 vs league | 2026 vs league |
+|---|---:|---:|---:|
+| league | 1 | +0.000 | +0.000 |
+| pitcher | 696-838 | −0.013 | −0.002 |
+| pitch group | 3 | −0.019 | −0.015 |
+| pitch type | 16-17 | −0.017 | −0.018 |
+| pitch type × cluster | 21-24 | −0.018 | −0.019 |
+| pitcher × pitch type | 3.2-3.8k | −0.022 | −0.022 |
+
+Everything lands between 0.01 and 0.02 in of one league number. Pitch-type beats
+per-pitcher by 0.016 in on 2026 but only 0.004 in on 2025, so the accuracy ordering
+is not stable even though the parameters are. **Fit the gain at pitch-type level
+because it is the level that reproduces, not because it scores better.**
+
 #### The per-pitcher term does not survive season scale
 
 It is tempting to read the small per-pitcher number as a sample-size problem:
