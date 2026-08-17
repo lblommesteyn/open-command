@@ -270,32 +270,45 @@ parameters than a per-pitcher-per-pitch-type offset and an in-sample column woul
 flatter it.
 
 Two correlations should never be compared through their separate CIs when they
-share the same pitchers, so the table that matters is the **paired** difference on
-common resamples. 2025, unadjusted targets:
+share the same pitchers, and one season of 339 pitchers puts the standard error on
+a paired difference near 0.02, which cannot resolve a move of that size. So
+`validate_intent_pooled.py` pools both seasons to **566 pitcher-seasons over 410
+pitchers** and bootstraps by *pitcher*, keeping a two-season pitcher as one unit of
+evidence.
 
-| | spearman Δ | pearson Δ |
-|---|---:|---:|
-| BB% | +0.033 [−0.005, +0.073] | +0.031 [−0.005, +0.069] |
-| Stuff+ | −0.008 [−0.052, +0.036] | +0.002 [−0.040, +0.044] |
-| xERA | −0.004 [−0.047, +0.038] | −0.005 [−0.050, +0.038] |
-| xERA \| Stuff+ | −0.013 [−0.060, +0.034] | −0.005 [−0.053, +0.042] |
+It reports the paired difference and, more usefully, the **partial correlation in
+both directions**. The two metrics correlate about 0.95, so a marginal difference
+is a poor instrument; what settles it is whether each carries outcome signal the
+other lacks. Unadjusted targets, spearman:
 
-Every interval covers zero. BB% is the only one that leans positive and it does not
-replicate on 2026 (+0.014 [−0.056, +0.082]). Adding the outing offset does not help
-either (BB% +0.021 [−0.018, +0.061]). On the published targets the deltas are flat
-to slightly negative.
+| | paired Δ | intent \| inferred | inferred \| intent |
+|---|---:|---:|---:|
+| **BB%** | **+0.033** [−0.002, +0.069] | **+0.226** [+0.143, +0.305] | +0.075 [−0.013, +0.165] |
+| Stuff+ | −0.001 [−0.039, +0.038] | +0.054 [−0.029, +0.139] | +0.058 [−0.023, +0.139] |
+| xERA | −0.015 [−0.056, +0.023] | −0.034 [−0.116, +0.046] | +0.026 [−0.054, +0.110] |
+| **xERA \| Stuff+** | −0.021 [−0.062, +0.019] | +0.001 [−0.079, +0.083] | **+0.084** [+0.003, +0.168] |
 
-**So the model removes 0.8 in of miss and does not reorder pitchers.** That is not
-a contradiction, it is the arithmetic: a per-pitcher median over hundreds to
-thousands of pitches has already averaged away per-pitch noise, so removing more of
-it cannot move that pitcher's number relative to anyone else's. Only a
-**per-pitcher-varying bias** can.
+**BB% improves.** The paired delta is +0.033 with P(Δ≤0) = 0.036, and the asymmetry
+is the firm part: intent carries BB% signal inferred lacks, while inferred carries
+little that intent lacks.
 
-Which is exactly what the one historically successful step did. Going naive →
-inferred lifts BB% from +0.456 to +0.547, and that step *is* a per-pitcher
-correction. Everything the intent model adds on top is within-pitcher refinement:
-better cells, a better blend, a within-game offset. All of it makes each pitch's
-target more accurate and none of it changes who ranks above whom.
+**xERA | Stuff+ does not, and leans the other way.** Incremental information is dead
+zero, and the reverse direction clears zero in *inferred's* favour. Any improvement
+larger than **+0.019** is excluded.
+
+On the **published** targets neither improves: BB% Δ = −0.001 [−0.025, +0.023] with
+symmetric partials (+0.102 vs +0.110), so improvement above +0.023 is excluded.
+The adjustment does not just hide the model's inches, it removes its BB% gain too.
+Adding the outing offset helps neither metric on either target file, so the
+within-game term is an inches lever only.
+
+The reason the wins are this small is arithmetic. A per-pitcher median over hundreds
+to thousands of pitches has already averaged away per-pitch noise, so removing more
+of it barely moves that pitcher relative to anyone else. Only a **per-pitcher-varying
+bias** can, which is exactly what the one historically large step was: naive →
+inferred lifts BB% from +0.456 to +0.547 and *is* a per-pitcher correction. Most of
+what the intent model adds is within-pitcher refinement, which sharpens every pitch
+and reorders almost nobody.
 
 If the goal is validity rather than inches, that is the design brief: look for terms
 that differ **between** pitchers and are currently being charged to their command.

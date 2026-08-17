@@ -51,7 +51,9 @@ def cross_fit(df, folds=FOLDS):
     return tx, tz
 
 
-def main(year="2026", targets="targets.csv.gz"):
+def build_table(year, targets):
+    """Per-pitcher command metrics for one season, joined to Fangraphs and filtered
+    to the shipped validity population."""
     base = DATA / year
     tg = pd.read_csv(base / targets)
     df = il.prepare(tg, pd.read_csv(base / "pbp_info.csv.gz"),
@@ -82,6 +84,12 @@ def main(year="2026", targets="targets.csv.gz"):
                   left_on="pitcher_id", right_on="xMLBAMID", how="left")
     d = d[(d["n"] >= LEADERBOARD_MIN_N) & (d["IP"] >= MIN_IP)].reset_index(drop=True)
     d = d.dropna(subset=[c for _, c, _ in VALIDITY_ROWS])
+    d["season"] = Path(year).parts[0]
+    return d
+
+
+def main(year="2026", targets="targets.csv.gz"):
+    d = build_table(year, targets)
 
     metrics = [("naive", "naive_in"), ("inferred", "inferred_in"),
                ("intent (in-sample)", "intent_ins_in"), ("intent (cross-fit)", "intent_cf_in"),
