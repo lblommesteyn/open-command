@@ -157,7 +157,7 @@ CANDIDATES = [
     ("OLS slope, one league", build(A.spots, lambda a: ols_slope(a, "league"), A.offsets)),
     ("flat offset hierarchy", build(A.spots, A.weights, simple_offsets)),
     ("OLS slope, per cluster", build(A.spots, lambda a: ols_slope(a, "lobe"), A.offsets)),
-    ("recommended", build(one_spot, lambda a: ols_slope(a, "pitch_type"), A.offsets)),
+    ("one spot + OLS slope", build(one_spot, lambda a: ols_slope(a, "pitch_type"), A.offsets)),
     ("simplest that could work", build(one_spot, lambda a: ols_slope(a, "pitch_type"), simple_offsets)),
 ]
 

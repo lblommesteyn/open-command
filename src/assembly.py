@@ -525,10 +525,13 @@ def load(year, targets="targets.csv.gz"):
 
 
 def main():
-    year = sys.argv[1] if len(sys.argv) > 1 else "2025"
-    prev_year = sys.argv[2] if len(sys.argv) > 2 else None
-    d = load(year)
-    prev = load(prev_year) if prev_year else None
+    argv = sys.argv[1:]
+    pos = [x for x in argv if not x.startswith("--")]
+    year = pos[0] if pos else "2025"
+    prev_year = pos[1] if len(pos) > 1 else None
+    tgt = argv[argv.index("--targets") + 1] if "--targets" in argv else "targets.csv.gz"
+    d = load(year, tgt)
+    prev = load(prev_year, tgt) if prev_year else None
     fg = pd.read_csv(DATA / f"fg_pitching_{year}.csv.gz")
     print(f"{year}: {len(d)} scorable pitches, {d.pitcher_id.nunique()} pitchers, {d.game_pk.nunique()} games"
           + (f"   previous season {prev_year}: {len(prev)} pitches" if prev is not None else ""), flush=True)
@@ -541,8 +544,9 @@ def main():
         L += block                           # failure cannot eat the finished sections
         print("\n".join(block), flush=True)
     ART.mkdir(exist_ok=True)
-    (ART / f"assembly_{year}.txt").write_text("\n".join(L) + "\n", encoding="utf-8")
-    print(f"\nwrote artifacts/assembly_{year}.txt")
+    tag = "" if tgt == "targets.csv.gz" else "_" + tgt.split(".")[0].replace("targets_", "")
+    (ART / f"assembly_{year}{tag}.txt").write_text("\n".join(L) + "\n", encoding="utf-8")
+    print(f"\nwrote artifacts/assembly_{year}{tag}.txt")
 
 
 if __name__ == "__main__":

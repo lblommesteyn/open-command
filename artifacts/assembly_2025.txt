@@ -1,0 +1,61 @@
+ASSEMBLED TARGET INFERENCE — VALIDATIONS 2025
+================================================================
+
+MEDIAN MISS (held out, split-half by game, 5 seeds)
+----------------------------------------------------------------
+                                pooled   per pitcher  pitchers
+  naive                          10.92         11.06       716
+  fixed offset                    9.98         10.30       716
+  assembled                       9.84         10.09       716
+
+  assembled vs fixed offset: -0.15 in per pitcher, better for 78% of 716 pitchers
+
+FLATNESS (each pitcher's training truncated to his first n pitches)
+----------------------------------------------------------------
+                                    n=10        n=25       n=100       n=500        full
+  naive                            10.92       10.92       10.92       10.92       10.92
+  fixed offset                     12.06       11.26       10.47       10.03        9.97
+  assembled                        10.65       10.40       10.14        9.89        9.83
+
+  naive fits nothing, so truncation cannot touch it: that row is the control.
+
+CORRELATIONS to independent outcome data (Spearman, whole season)
+----------------------------------------------------------------
+  339 pitchers with 100+ pitches and 50+ innings
+
+                                                 naive              fixed offset                 assembled
+  BB%                                           +0.456                    +0.547                    +0.549
+  Stuff+                                        +0.198                    +0.251                    +0.265
+  xERA                                          -0.071                    -0.069                    -0.078
+  xERA | Stuff+                                 +0.085                    +0.137                    +0.139
+
+  BB% is the check that matters: a better target should rank walk-prone pitchers
+  higher, and it does so without ever seeing a walk.
+
+STABILIZATION (reliability of the per-pitcher number, by pitch count)
+----------------------------------------------------------------
+                                   100-300       300-700          700+
+  naive                              0.475         0.701         0.910
+  fixed offset                       0.444         0.611         0.883
+  assembled                          0.602         0.637         0.885
+
+  Full-season reliability implied by two half-seasons. 0.5 is the usual bar.
+
+STICKINESS (the same pitcher, previous season against this one)
+----------------------------------------------------------------
+  452 pitchers with 100+ pitches in both 2026 and this season
+
+                                                 naive              fixed offset                 assembled
+  year to year                                  +0.583                    +0.664                    +0.704
+
+  A target that measures a real skill persists; one that fits noise does not.
+
+OUT OF SAMPLE (train early season, test late) against a random-split control
+----------------------------------------------------------------
+                               early -> late    random split    drift cost
+  naive                                10.96           10.92         +0.03
+  fixed offset                         10.24            9.97         +0.27
+  assembled                             9.99            9.83         +0.16
+
+  Drift cost is what a method loses by predicting forward rather than
+  interpolating. A method that fits the season's own quirks pays more.

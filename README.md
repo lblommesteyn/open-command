@@ -403,64 +403,81 @@ because it is the level that reproduces, not because it scores better.**
 setup spots, a glove slope from a two-level hierarchy found by searching a 2D grid of
 medians with its sampling noise priced from an even/odd game split, and a four-rung offset
 carrying a per (pitch type x hand) prior distribution. It is vendored here as
-`src/assembly.py`, changed only in that `load()` takes a targets filename and the label
-columns are wide enough for longer method names.
+`src/assembly.py`, changed only in that `load()` and `main()` take a targets filename and
+the label columns are wide enough for longer method names.
 
-`src/simplify.py` takes that recipe apart one piece at a time and races every reduction on
-assembly's own six validations, building each candidate from assembly's own primitives so
-that nothing but the piece under test changes. 2025, 652,279 pitches, 870 pitchers,
+**Score it on raw gloves, not on the published tree.** `assembly.py` reads
+`data/<year>/targets.csv.gz`, which in command-plus is the raw-glove tree and here is the
+adjusted release. The difference is not cosmetic: the adjustment pulls each glove toward
+that clip's own ball, which flatters the naive baseline and compresses the gaps between
+every method. Measured both ways, the assembled model beats the shipped offset by 0.62 in
+per pitcher on raw gloves and by 0.15 in on the adjusted tree, and it is better for 98% of
+pitchers against 78%. Everything below is raw: 659,863 pitches, 870 pitchers, 2,399 games,
 split-half by game, 5 seeds.
+
+`src/simplify.py` takes the recipe apart one piece at a time and races every reduction on
+assembly's own six validations, building each candidate from assembly's own primitives so
+that nothing but the piece under test changes.
 
 | method | miss | per pitcher | n=10 | stab 100-300 | sticky | drift |
 |---|---:|---:|---:|---:|---:|---:|
-| naive | 10.92 | 11.06 | 10.92 | 0.475 | +0.583 | +0.03 |
-| fixed offset (shipped) | 9.98 | 10.30 | 12.06 | 0.444 | +0.664 | +0.27 |
-| assembled | 9.84 | 10.09 | 10.65 | **0.602** | +0.704 | +0.16 |
-| no ball-gated spots | 9.83 | 10.08 | 10.64 | 0.556 | +0.700 | +0.16 |
-| OLS slope, per cell | 9.86 | 10.13 | 10.89 | 0.549 | +0.707 | +0.15 |
-| OLS slope, pitch type | 9.85 | 10.10 | 10.39 | 0.593 | +0.701 | +0.15 |
-| OLS slope, one league | 9.87 | 10.13 | 10.39 | 0.593 | +0.698 | +0.15 |
-| OLS slope, per cluster | 9.86 | 10.16 | 10.97 | 0.542 | +0.709 | +0.15 |
-| flat offset hierarchy | 9.88 | 10.15 | 10.95 | 0.554 | +0.695 | +0.17 |
-| **recommended** | 9.85 | **10.08** | **10.32** | 0.537 | +0.706 | **+0.15** |
-| simplest that could work | 9.86 | 10.10 | 10.64 | 0.539 | +0.710 | +0.17 |
+| naive | 12.11 | 12.20 | 12.11 | 0.542 | +0.557 | +0.02 |
+| fixed offset (shipped) | 11.03 | 11.36 | 13.07 | 0.489 | +0.635 | +0.28 |
+| assembled | 10.44 | 10.68 | 11.35 | 0.665 | +0.686 | +0.21 |
+| **no ball-gated spots** | **10.42** | **10.64** | **11.29** | 0.653 | **+0.686** | +0.22 |
+| OLS slope, per cell | 10.43 | 10.71 | 11.78 | 0.673 | +0.687 | +0.23 |
+| OLS slope, pitch type | 10.41 | 10.68 | 11.26 | 0.639 | +0.679 | +0.21 |
+| OLS slope, one league | 10.43 | 10.71 | 11.27 | 0.644 | +0.687 | +0.21 |
+| OLS slope, per cluster | 10.44 | 10.73 | 11.92 | 0.666 | +0.684 | +0.23 |
+| flat offset hierarchy | 10.52 | 10.74 | 11.70 | 0.654 | +0.653 | +0.22 |
+| one spot + OLS slope | 10.41 | 10.63 | 11.16 | 0.641 | +0.653 | +0.21 |
 
-**The ball-gated clustering is worth 0.00 in.** Deleting the stage outright scores 9.83
-against the assembled 9.84, and it is 34 of the 38 seconds a fold costs.
+**The ball-gated clustering is worth less than nothing.** Deleting the stage outright
+scores 10.42 / 10.64 against the assembled 10.44 / 10.68, holds stickiness at +0.686
+exactly, and is better at every truncation. It is 34 of the 38 seconds a fold costs, so
+the single most expensive stage in the model is also the one stage that pays nothing.
 
-**The slope is worth 0.02 in however it is fit.** Grid search with even/odd noise pricing,
-closed-form regression through the origin, per cell, per pitch type, per cluster, or one
-number for the whole sport: the family spans 9.84 to 9.87. Fitting a slope per cluster,
-the recipe as literally stated, is the worst of them per pitcher at 10.16. This is the
-same conclusion the [gain-level sweep](#the-gain-belongs-to-the-pitch-not-the-pitcher)
-reached from the other direction.
+**The slope is worth 0.03 in however it is fit.** Grid search with even/odd noise pricing,
+closed-form regression through the origin, and league, pitch type, cell or cluster
+granularity all land between 10.41 and 10.44. Fitting a slope per cluster, the recipe as
+literally stated, is the worst of them per pitcher at 10.73. This is the same conclusion
+the [gain-level sweep](#the-gain-belongs-to-the-pitch-not-the-pitcher) reached from the
+other direction, on different data and a different estimator.
 
-**Granularity costs history, though.** Truncate each pitcher's training to his first ten
-pitches and a per-cell slope reads 10.89 and a per-cluster slope 10.97, against 10.39 for
-a slope shared across the league. Coarse slopes are not merely as good, they are better
-in April, because a thin group has nothing of its own to say.
+**Granularity costs history.** Truncate each pitcher's training to his first ten pitches
+and a per-cell slope reads 11.78 and a per-cluster slope 11.92, against 11.27 for a slope
+shared across the league. Coarse slopes are not merely as good, they are better in April,
+because a thin group has nothing of its own to say.
 
-**External validity ties.** BB% runs +0.547 to +0.560 across every fitted method against
-naive's +0.456; xERA given Stuff+ runs +0.137 to +0.148 against +0.085. Nothing in the
-simplification is visible from the outcome side.
+**The offset hierarchy is the one piece that earns.** Flattening it to cell-shrunk-to-
+pitcher costs 0.11 in pooled and drops stickiness from +0.686 to +0.653. It is worth more
+than every slope decision put together.
 
-The recommendation is therefore **one setup spot per (pitcher, pitch type), one slope per
-pitch type by regression through the origin, and assembly's offset hierarchy unchanged**.
-It has the best per-pitcher miss in the table, the best early-season behaviour by 0.33 in,
-the lowest drift cost, equal stickiness and equal BB%, and it drops the k-means, the ball
-gate, the grid search and the noise model: about 1 second a fold against 38.
+**The two safe cuts are not safe together.** Dropping the clustering holds stickiness at
++0.686; dropping the grid-search slope holds it at +0.679 to +0.687. Doing both drops it
+to +0.648 to +0.653, and the same happens to the flattened-offset variant. No mechanism is
+offered here for the interaction; it reproduces across the variants that make both cuts,
+and that is the whole claim.
 
-What it gives up is thin-sample reliability, 0.537 against 0.602 for pitchers with 100 to
-300 pitches. Lining the variants up, that cell appears only where ball-gated clustering
-and a coarse slope are both present, and it is the one place in six validations where the
-clustering shows up at all. Read it with the caveat that `naive` scores 0.701 in the 300
-to 700 bucket, beating every fitted method including the assembled one: a metric that
-ranks "fit nothing" first is partly rewarding not fitting.
+So: **drop the clustering and keep the rest.** It is a net improvement on the miss, on
+early-season behaviour and on per-pitcher accuracy, it preserves year-to-year persistence
+to three decimal places, and it takes a fold from 38 seconds to 5. Going further to a
+closed-form pitch-type slope buys the last 5 seconds and 0.13 in of April accuracy, and
+costs 0.033 of stickiness; that trade is a judgement call, not something the numbers
+settle.
+
+**Do not use stabilization as a tiebreaker.** `naive` scores 0.683 in the 300-700 bucket
+and 0.909 at 700+, beating every fitted method including the assembled one. A reliability
+metric that ranks "fit nothing" first is reading smoothness, not skill.
+
+The checked-in artifacts label the last row `recommended`, from the pass on the adjusted
+tree where it was; the raw numbers moved the recommendation up to `no ball-gated spots`.
 
 ```bash
-python src/assembly.py 2025 2026     # the full assembled model and its six validations
-python src/simplify.py 2025 2026 --full
+python src/assembly.py 2025 2026 --targets targets_unadjusted.csv.gz
+python src/simplify.py 2025 2026 --full --targets targets_unadjusted.csv.gz
 ```
+
 
 #### The per-pitcher term does not survive season scale
 
