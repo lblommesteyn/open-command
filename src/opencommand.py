@@ -9,7 +9,7 @@ Functions:
 
 Reads:      data/<year>/targets.csv.gz + data/<year>/pbp_info.csv.gz
             data/<year>/camera_poses.csv.gz
-            data/fg_pitching_<season>.csv.gz
+            data/fangraphs/fg_pitching_<season>.csv.gz
 Writes:     data/<year>/command_scores.csv (plain csv, the one output small enough
             for GitHub uncompressed), per pitcher x pitch type (+ an ALL row per
             pitcher): n, naive_in, inferred_in
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     nested = sorted(base.glob("*/targets.csv.gz"))
     assert not nested, f"this tree nests another season; score that one: opencommand.py {year}/{nested[0].parent.name}"
     season = Path(year).parts[0]
-    fg_file = DATA / f"fg_pitching_{season}.csv.gz"
+    fg_file = DATA / "fangraphs" / f"fg_pitching_{season}.csv.gz"
     assert fg_file.exists(), f"the Fangraphs season file ships beside the trees: {fg_file}"
 
     targets = pd.read_csv(base / "targets.csv.gz")

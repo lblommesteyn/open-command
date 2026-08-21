@@ -17,7 +17,7 @@
 
 OpenCommand scores **command** using the pitch location's distance from target.
 
-This repo contains 2025/2026 computer vision object detections and the full inference pipeline for producing **target estimates** and resulting **command scores**.
+This repo contains 2024/2025/2026 computer vision object detections and the full inference pipeline for producing **target estimates** and resulting **command scores**.
 
 <p align="center">
   <img src="artifacts/rogers_sinker.gif" alt="Tyler Rogers sinker">
@@ -25,6 +25,8 @@ This repo contains 2025/2026 computer vision object detections and the full infe
 <p align="center"><sub>Tyler Rogers dots a backdoor sinker (TB @ TOR, 2026/05/13). <b>Yellow box:</b> broadcast strikezone detection. <b>Thin white circle:</b> catcher glove detection. <b>Thick white circle:</b> glove detection projected onto strikezone plane.</sub></p>
 
 ## Updates
+
+#### 2026-08-21: Added 2024 season
 
 #### 2026-08-21: Version 1.1.0
 - Targets are now chosen at the *highest glove position in the pre-pitch window<sup>1</sup>, **discounted by how early it is**.*
@@ -162,17 +164,29 @@ Raw detections (in `data/<year>/raw/`) are produced using YOLO11 glove/ball/stri
 
 OpenCommand tracks nearly all the pitches that it *can*, with most clips lost being due to *no strikezone detected*<sup>1</sup> and *late center field camera cut*<sup>2</sup>.
 
-**For 2025:** 89.63 / 93.17% possible
+**For 2024:** 92.01 / 94.36% possible
+
+| Funnel loss | Clips Lost (%) | Remaining | Coverage |
+|---|---:|---:|---:|
+| All pitches | — | 722,012 | 100.00% |
+| Clip never published | 115 (-0.02%) | 721,897 | 99.98% |
+| No strikezone detected | 22,720 (-3.15%) | 699,177 | 96.84% |
+| No ball release detected | 5,179 (-0.72%) | 693,998 | 96.12% |
+| Late center field camera cut | 17,888 (-2.48%) | 676,110 | 93.64% |
+| Low detection quality | 6,607 (-0.92%) | 669,503 | 92.73% |
+| Implausible target | 5,189 (-0.72%) | **664,314** | **92.01%** |
+
+**For 2025:** 90.00 / 93.17% possible
 
 | Funnel loss | Clips Lost (%) | Remaining | Coverage |
 |---|---:|---:|---:|
 | All pitches | — | 724,005 | 100.00% |
 | Clip never published | 763 (-0.11%) | 723,242 | 99.89% |
-| No strikezone detected | 30,404 (-4.20%) | 692,838 | 95.70% |
-| No ball release detected | 11,719 (-1.62%) | 681,119 | 94.08% |
-| Late center field camera cut | 18,267 (-2.52%) | 662,852 | 91.55% |
-| Low detection quality | 10,880 (-1.50%) | 651,972 | 90.05% |
-| Implausible target | 3,056 (-0.42%) | **648,916** | **89.63%** |
+| No strikezone detected | 30,447 (-4.21%) | 692,795 | 95.69% |
+| No ball release detected | 11,719 (-1.62%) | 681,076 | 94.07% |
+| Late center field camera cut | 18,267 (-2.52%) | 662,809 | 91.55% |
+| Low detection quality | 8,036 (-1.11%) | 654,773 | 90.44% |
+| Implausible target | 3,142 (-0.43%) | **651,631** | **90.00%** |
 
 <sub><sup>1</sup> Sometimes broadcasts don't draw a strikezone box on the screen<br>
 <sup>2</sup> Sometimes camera cuts to CF-cam (i.e. pitcher-batter view) too late</sub>
@@ -189,39 +203,33 @@ A nice feature of this is that you can tell where the pitcher was *trying* to th
 
 ### Command distribution
 
-Couple notes:
-- Inferring targets (pitcher × pitch-type offset) shaves off about **1 inch** off of naive miss. 
-- MLB pitchers miss by 9-11 inches
-- Pitchers command fastballs ~1 inch better
-- The miss distribution has some right skew
-
 **2025, naive median miss** — min. 50 pitches
 
 | Pitch type | Pitchers | Min | p10 | p25 | Median | p75 | p90 | Max |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| All pitches | 716 | 8.39 | 9.85 | 10.42 | 11.06 | 11.88 | 12.75 | 15.94 |
-| Four-seam (FF) | 581 | 7.33 | 8.38 | 9.22 | 10.07 | 10.88 | 11.81 | 14.22 |
-| Sinker (SI) | 380 | 6.10 | 8.50 | 9.18 | 9.92 | 10.95 | 12.14 | 18.34 |
-| Cutter (FC) | 215 | 6.84 | 8.42 | 9.04 | 9.82 | 10.72 | 11.71 | 15.90 |
-| Slider (SL) | 393 | 7.31 | 9.68 | 10.54 | 11.53 | 13.11 | 14.32 | 20.56 |
-| Sweeper (ST) | 230 | 8.66 | 10.01 | 10.92 | 11.95 | 13.38 | 14.51 | 19.65 |
-| Curveball (CU+KC) | 248 | 8.32 | 10.82 | 11.79 | 13.07 | 14.60 | 16.10 | 21.30 |
-| Changeup (CH) | 301 | 8.26 | 10.48 | 11.59 | 12.78 | 14.42 | 16.48 | 28.97 |
-| Splitter (FS) | 95 | 7.59 | 10.65 | 12.11 | 13.70 | 15.73 | 17.28 | 22.26 |
+| All pitches | 716 | 8.78 | 10.04 | 10.54 | 11.21 | 11.95 | 12.72 | 15.83 |
+| Four-seam (FF) | 581 | 7.90 | 8.90 | 9.71 | 10.56 | 11.61 | 12.58 | 15.27 |
+| Sinker (SI) | 380 | 6.50 | 8.61 | 9.36 | 10.05 | 11.25 | 12.21 | 16.93 |
+| Cutter (FC) | 215 | 7.11 | 8.65 | 9.39 | 10.17 | 11.13 | 12.14 | 15.67 |
+| Slider (SL) | 393 | 7.96 | 9.58 | 10.48 | 11.43 | 12.77 | 14.13 | 19.55 |
+| Sweeper (ST) | 228 | 8.67 | 9.99 | 10.72 | 11.65 | 12.86 | 14.56 | 17.90 |
+| Curveball (CU+KC) | 248 | 8.78 | 10.76 | 11.59 | 12.84 | 14.34 | 15.73 | 20.30 |
+| Changeup (CH) | 301 | 8.39 | 10.18 | 11.13 | 12.16 | 13.79 | 15.48 | 27.03 |
+| Splitter (FS) | 95 | 8.49 | 10.45 | 11.74 | 13.28 | 14.93 | 16.61 | 21.41 |
 
 **2025, inferred median miss** — naive + pitcher × pitch-type offset
 
 | Pitch type | Pitchers | Min | p10 | p25 | Median | p75 | p90 | Max |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| All pitches | 716 | 7.37 | 8.91 | 9.43 | 9.97 | 10.56 | 11.13 | 14.54 |
-| Four-seam (FF) | 581 | 6.77 | 8.17 | 8.70 | 9.39 | 10.13 | 10.87 | 12.76 |
-| Sinker (SI) | 380 | 6.09 | 7.99 | 8.49 | 9.11 | 9.88 | 10.65 | 13.40 |
-| Cutter (FC) | 215 | 6.87 | 8.09 | 8.64 | 9.37 | 10.12 | 10.77 | 13.28 |
-| Slider (SL) | 393 | 6.97 | 8.97 | 9.68 | 10.39 | 11.25 | 12.05 | 14.60 |
-| Sweeper (ST) | 230 | 8.11 | 9.39 | 9.88 | 10.66 | 11.51 | 12.46 | 15.01 |
-| Curveball (CU+KC) | 248 | 8.37 | 9.84 | 10.62 | 11.40 | 12.37 | 13.37 | 17.17 |
-| Changeup (CH) | 301 | 7.20 | 9.07 | 9.78 | 10.56 | 11.32 | 12.04 | 14.85 |
-| Splitter (FS) | 95 | 7.41 | 9.30 | 9.96 | 10.99 | 12.06 | 13.12 | 15.56 |
+| All pitches | 716 | 7.47 | 9.09 | 9.60 | 10.17 | 10.77 | 11.28 | 14.72 |
+| Four-seam (FF) | 581 | 7.13 | 8.45 | 9.02 | 9.66 | 10.37 | 11.09 | 13.43 |
+| Sinker (SI) | 380 | 6.27 | 8.18 | 8.72 | 9.39 | 10.16 | 10.87 | 14.22 |
+| Cutter (FC) | 215 | 7.08 | 8.27 | 8.85 | 9.55 | 10.35 | 11.03 | 12.87 |
+| Slider (SL) | 393 | 7.61 | 9.00 | 9.64 | 10.52 | 11.35 | 12.22 | 14.33 |
+| Sweeper (ST) | 228 | 8.26 | 9.44 | 10.03 | 10.68 | 11.56 | 12.53 | 16.07 |
+| Curveball (CU+KC) | 248 | 8.51 | 9.81 | 10.73 | 11.42 | 12.50 | 13.48 | 18.82 |
+| Changeup (CH) | 301 | 7.67 | 8.99 | 9.81 | 10.53 | 11.32 | 12.18 | 15.66 |
+| Splitter (FS) | 95 | 8.08 | 9.56 | 10.18 | 11.14 | 12.03 | 13.28 | 16.93 |
 
 ### Some correlations
 
