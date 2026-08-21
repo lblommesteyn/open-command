@@ -46,7 +46,6 @@ This repo contains 2024/2025/2026 computer vision object detections and the full
 
 ```
 pip install -r requirements.txt          
-# or:  conda env create -f environment.yml
 ```
 
 ### Pipeline
