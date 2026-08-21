@@ -3,8 +3,7 @@
 Notes:
  - Target detection takes the glove peak
     1. Window: glove detections in [release - 2.0 s, release - 0.3 s].
-    2. Peak: highest glove location whose ±0.05 s neighborhood is tight
-        - neighborhood spread ≤ SUPPORT_IN inches
+    2. Peak: choose highest glove location (penalized by being far from release)
 
 Reads:      data/<year>/glove_locations/<game_pk>.csv.gz +
             data/<year>/pbp_info.csv.gz (pitch type for the screen, pitcher + actual
@@ -27,8 +26,7 @@ DATA = Path(__file__).resolve().parents[1] / "data"
 
 WINDOW_S = 2.0              # target search window length before release
 END_BEFORE_RELEASE_S = 0.3  # window end: release - 0.3 s (catch-lock-safe)
-PEAK_HALF_S = 0.05          # neighborhood half-width around a peak candidate
-SUPPORT_IN = 4.0            # max neighborhood spread (inches) for a stable peak
+LATENESS_IN_PER_S = 15.0    # penalty factor peak being far from release
 
 
 def select_target(g):
@@ -42,16 +40,16 @@ def select_target(g):
     # between() is False on NaN, so a glove-less clip's one NaN sentinel row drops here
     win = g[g["frame_idx"].between(lo, hi)]
 
-    # world-space peak: highest glove first, first tight neighborhood wins
+    if len(win) == 0:
+        return {**out, "status": "no target"}
+
+    # world-space peak: highest glove, discounted by how long before the window's last
+    # detection it sits, so a late target beats an earlier and higher one
     frames = win["frame_idx"].to_numpy()
     x_in, z_in = win["x_in"].to_numpy(), win["z_in"].to_numpy()
-    for i in np.argsort(-z_in):
-        near = np.abs(frames - frames[i]) <= PEAK_HALF_S * fps
-        if max(np.ptp(x_in[near]), np.ptp(z_in[near])) <= SUPPORT_IN:
-            return {**out, "status": "ok", "target_frame": int(frames[i]),
-                    "naive_x_in": float(np.median(x_in[near])),
-                    "naive_z_in": float(np.median(z_in[near]))}
-    return {**out, "status": "no target"}
+    i = int(np.argmax(z_in - LATENESS_IN_PER_S * (frames.max() - frames) / fps))
+    return {**out, "status": "ok", "target_frame": int(frames[i]),
+            "naive_x_in": float(x_in[i]), "naive_z_in": float(z_in[i])}
 
 
 def targets_for_game(job):

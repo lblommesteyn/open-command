@@ -2,7 +2,7 @@
 
 <img src="artifacts/banner.png" alt="OpenCommand" width="100%">
 
-[![Version](https://img.shields.io/badge/version-1.0.0-6E7681?style=for-the-badge&labelColor=24292F)](https://huggingface.co/datasets/tomdoyo/open-command)
+[![Version](https://img.shields.io/badge/version-1.1.0-6E7681?style=for-the-badge&labelColor=24292F)](https://huggingface.co/datasets/tomdoyo/open-command)
 [![License](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-6E7681?style=for-the-badge&labelColor=24292F)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 [![GitHub](https://img.shields.io/badge/github.com%2Ftomdoyo%2Fopen--command-00852E?style=for-the-badge&labelColor=24292F)](https://github.com/tomdoyo/open-command)
 
@@ -13,7 +13,7 @@
 > [!IMPORTANT]  
 > Git history has been rewritten due to restructuring for large file support. If you have an existing clone or fork, delete it and re-clone.
 
-## Let's Measure Command
+# Let's Measure Command
 
 OpenCommand scores **command** using the pitch location's distance from target.
 
@@ -23,6 +23,13 @@ This repo contains 2025/2026 computer vision object detections and the full infe
   <img src="artifacts/rogers_sinker.gif" alt="Tyler Rogers sinker">
 </p>
 <p align="center"><sub>Tyler Rogers dots a backdoor sinker (TB @ TOR, 2026/05/13). <b>Yellow box:</b> broadcast strikezone detection. <b>Thin white circle:</b> catcher glove detection. <b>Thick white circle:</b> glove detection projected onto strikezone plane.</sub></p>
+
+## Updates
+
+#### 2026-08-21: Version 1.1.0
+- Targets are now chosen at the *highest glove position in the pre-pitch window<sup>1</sup>, **discounted by how early it is**.*
+
+<sub><sup>1</sup> Median of ±0.05s around this used to be targets
 
 ## How it Works
 
@@ -79,6 +86,8 @@ raw/gloveball_tracks  raw/strikezone_tracking
 
 ### In detail
 
+*See [here](https://x.com/tomdoyo/status/2087272169852088752) for visuals!*
+
 #### **1. Solving camera pose** (every pitch)
 - The CF camera is a fixed mount per game that pans/tilts/zooms per pitch.
 - Estimate *where* the camera is:
@@ -102,12 +111,12 @@ raw/gloveball_tracks  raw/strikezone_tracking
 <sub><sup>1</sup> Like `Cy`, glove depth (`glove_y`) is really hard to estimate. So we assume `glove_y` to be -1.75ft (median catch depth).<br>
 
 #### **3. Inferring target with glove locations**
-- Take the highest `glove_xz` in the [release-2.0s, release-0.3s] window<sup>1</sup>. This is the **naive** target.
+- Take the highest `glove_xz` in the [release-2.0s, release-0.3s] window, discounted by how early it is<sup>1</sup>. This is the **naive** target.
 - Many pitchers like to "start the pitch from the glove and let the ball break away from it". To account for this, add `pitcher × pitch type × season` offset. This is the **inferred target**.
   - This assumes every pitcher is **perfectly calibrated** on a pitch type level.
 - Use plausibility filter<sup>2</sup> to filter out extreme targets.
 
-<sub><sup>1</sup> Median in the ±0.05s around highest `glove_xz` frame; dispersed neighborhoods (jitter, detection flips) are skipped to the next stable candidate.<br>
+<sub><sup>1</sup> This is mainly to avoid decoy targets, usually when the runner is on second base.<br>
 <sup>2</sup> (`|x|` over 20in, `z` outside the pitch-type floor/cap)</sub>
 
 #### **4. Scoring command**
@@ -153,17 +162,17 @@ Raw detections (in `data/<year>/raw/`) are produced using YOLO11 glove/ball/stri
 
 OpenCommand tracks nearly all the pitches that it *can*, with most clips lost being due to *no strikezone detected*<sup>1</sup> and *late center field camera cut*<sup>2</sup>.
 
-**For 2025:** 90.09 / 92.80% possible
+**For 2025:** 89.63 / 93.17% possible
 
 | Funnel loss | Clips Lost (%) | Remaining | Coverage |
 |---|---:|---:|---:|
 | All pitches | — | 724,005 | 100.00% |
 | Clip never published | 763 (-0.11%) | 723,242 | 99.89% |
-| No strikezone detected | 30,447 (-4.21%) | 692,795 | 95.69% |
-| No ball release detected | 11,719 (-1.62%) | 681,076 | 94.07% |
-| Late center field camera cut | 20,888 (-2.89%) | 660,188 | 91.19% |
-| Low detection quality | 5,854 (-0.81%) | 654,334 | 90.38% |
-| Implausible target | 2,055 (-0.28%) | **652,279** | **90.09%** |
+| No strikezone detected | 30,404 (-4.20%) | 692,838 | 95.70% |
+| No ball release detected | 11,719 (-1.62%) | 681,119 | 94.08% |
+| Late center field camera cut | 18,267 (-2.52%) | 662,852 | 91.55% |
+| Low detection quality | 10,880 (-1.50%) | 651,972 | 90.05% |
+| Implausible target | 3,056 (-0.42%) | **648,916** | **89.63%** |
 
 <sub><sup>1</sup> Sometimes broadcasts don't draw a strikezone box on the screen<br>
 <sup>2</sup> Sometimes camera cuts to CF-cam (i.e. pitcher-batter view) too late</sub>
