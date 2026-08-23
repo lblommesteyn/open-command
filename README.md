@@ -164,18 +164,6 @@ Raw detections (in `data/<year>/raw/`) are produced using YOLO11 glove/ball/stri
 
 OpenCommand tracks nearly all the pitches that it *can*, with most clips lost being due to *no strikezone detected*<sup>1</sup> and *late center field camera cut*<sup>2</sup>.
 
-**For 2024:** 92.01 / 94.36% possible
-
-| Funnel loss | Clips Lost (%) | Remaining | Coverage |
-|---|---:|---:|---:|
-| All pitches | — | 722,012 | 100.00% |
-| Clip never published | 115 (-0.02%) | 721,897 | 99.98% |
-| No strikezone detected | 22,720 (-3.15%) | 699,177 | 96.84% |
-| No ball release detected | 5,179 (-0.72%) | 693,998 | 96.12% |
-| Late center field camera cut | 17,888 (-2.48%) | 676,110 | 93.64% |
-| Low detection quality | 6,607 (-0.92%) | 669,503 | 92.73% |
-| Implausible target | 5,189 (-0.72%) | **664,314** | **92.01%** |
-
 **For 2025:** 90.00 / 93.17% possible
 
 | Funnel loss | Clips Lost (%) | Remaining | Coverage |
