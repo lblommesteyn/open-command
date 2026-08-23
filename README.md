@@ -136,7 +136,7 @@ pip install huggingface_hub
 hf download tomdoyo/open-command --repo-type dataset --local-dir data
 ```
 
-That puts the tree where every script expects it. To take one file instead of all of them:
+To take one file instead of all of them:
 
 ```
 hf download tomdoyo/open-command 2026/command_scores.csv --repo-type dataset --local-dir data
