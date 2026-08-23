@@ -15,7 +15,7 @@
 
 # Let's Measure Command
 
-[OpenCommand](https://x.com/open_command) scores **command** using the pitch location's distance from target.
+[OpenCommand](https://x.com/open_command) measures **command** using the pitch location's distance from target.
 
 This repo contains 2024/2025/2026 computer vision object detections and the full inference pipeline for producing **target estimates** and resulting **command scores**.
 
