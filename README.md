@@ -15,7 +15,7 @@
 
 # Let's Measure Command
 
-OpenCommand scores **command** using the pitch location's distance from target.
+[OpenCommand](https://x.com/open_command) scores **command** using the pitch location's distance from target.
 
 This repo contains 2024/2025/2026 computer vision object detections and the full inference pipeline for producing **target estimates** and resulting **command scores**.
 
@@ -36,6 +36,7 @@ This repo contains 2024/2025/2026 computer vision object detections and the full
 ## How it Works
 
 ### Summary
+- *See [here](https://x.com/tomdoyo/status/2087272169852088752) for visuals!*
 - Estimate camera position with broadcast strikezone & ball detection
 - Estimate camera zoom/pan/tilt with broadcast strikezone & camera position
 - Estimate glove location with camera position/zoom/pan/tilt/roll & glove detection
