@@ -7,7 +7,7 @@ Notes:
    BUT plate_x/z stays at 17/12 ft.
  - Broadcast cam (CY_FT) is assumed to be 400ft.
 
-What lives here:
+Functions:
   camera/project/unproject:  the pinhole model
   make_traj:                 Statcast 9-param ball trajectory
   derive_release:            release time (s): the clip's release hint, or NaN when

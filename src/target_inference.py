@@ -2,12 +2,36 @@
 
 Notes:
  - Target detection takes the glove peak
-    1. Window: glove detections in [release - 2.0 s, release - 0.3 s].
+    1. Window: glove detections in [release - 2.0 s, release - 0.3 s]
     2. Peak: choose highest glove location (penalized by being far from release)
+ - Target inference takes detected glove_xz at peak
+   Both parts are a 2 level hierarchical model fit by empirical Bayes
+     - Each by its own standard error, each level's variance adjusted by DerSimonian-Laird
+    1. Glove dependence:
+       - Some pitchers don't look at the glove (e.g. Misiorowski) or make their
+         catchers set up depending on their miss patterns that day (or even previous
+         pitch). Some pitchers adjust more than 1 inch per inch of glove movement
+         (e.g. Skenes).
+       - Fit 4 slopes (without intercepts): xx, xz, zx, zz
+         (E.g. xx is how much target_x moves for each inch glove_x moves)
+    2. Offset:
+       - Some pitchers end pitches at the glove, some pitchers let pitches start
+         at the glove and break away, etc.
+       - Shrink offsets to get more robust values at low n.
+         (Fixed pitcher × pitch type offset overfits at low n. Instead of getting
+          0 inch miss at n=1, shrink offsets to league distribution prior.)
+       - Pitch type × handedness has its own distribution (e.g. a changeup lands
+         4 inches below the pitcher's average, a four-seam 4 above), so a pitch type
+         starts there instead of at its pitcher.
+       - The point of xz and zx terms in glove dependence is in case offsets are
+         different between target clusters for a pitcher's pitch type
+         (e.g. Kyle Hendricks' SI lands lower than the glove for glove side, but
+          not for arm side).
+         (This solution was shown to be simpler but as good as clustering approaches.)
 
 Reads:      data/<year>/glove_locations/<game_pk>.csv.gz +
             data/<year>/pbp_info.csv.gz (pitch type for the screen, pitcher + actual
-            location for the offset)
+            location for the offset, x0 for the handedness group)
 Writes:     data/<year>/targets.csv.gz, one row per posed clip, both target pairs;
             `status` is "ok" or "no target"
 Run:        python src/target_inference.py [year=2026]
@@ -27,6 +51,10 @@ DATA = Path(__file__).resolve().parents[1] / "data"
 WINDOW_S = 2.0              # target search window length before release
 END_BEFORE_RELEASE_S = 0.3  # window end: release - 0.3 s (catch-lock-safe)
 LATENESS_IN_PER_S = 15.0    # penalty factor peak being far from release
+
+CELL = ["pitcher_id", "pitch_type"]
+AXES = {"x": ("naive_x_in", "kx", "plate_x_in"), "z": ("naive_z_in", "kz", "plate_z_in")}
+WLO, WHI = 0.0, 1.5
 
 
 def select_target(g):
@@ -65,11 +93,171 @@ def targets_for_game(job):
     return rows
 
 
+# ─────────────────────────────────────────────  target inference
+
+def predict_random_effect(est, se2, parent):
+    """Shrinkage toward prior based on se.
+
+    DerSimonian-Laird: adjust each point in prior distribution by n to adjust for noise.
+    """
+    usable = est.notna() & parent.notna() & se2.notna() & np.isfinite(se2) & (se2 >= 0)
+    if usable.sum() < 2:
+        return parent.copy(), 0.0
+    e, v, p = est[usable], se2[usable].clip(lower=np.finfo(float).eps), parent[usable]
+    prec = 1 / v
+    S1, S2 = float(prec.sum()), float((prec ** 2).sum())
+    Q = float((prec * (e - p) ** 2).sum())
+    den = S1 - S2 / S1 if S1 > 0 else 0.0     # zero on a slice too thin to hold a spread at all,
+    if den <= 0: return parent.copy(), 0.0    # e.g. one pitch per pitcher in the season's first week
+    tau2 = max((Q - (len(e) - 1)) / den, 0.0)
+    if tau2 <= 0:
+        return parent.copy(), tau2
+    weight = tau2 / (tau2 + se2)
+    posterior = parent + weight * (est - parent)
+    return posterior.where(np.isfinite(posterior), parent), tau2
+
+
+def solve_glove_coefs(s):
+    """Least squares for wx, wz. ball deviation = wx * glove_dx + wz * glove_dz.
+
+    No intercept. Returns wx, wz (correspond to xx, xz OR zx, zz) and their squared
+    standard error.
+    """
+    flat = s.xx * s.zz - s.xz ** 2                        # zero or below: fewer than 2 glove positions
+    det = flat.clip(lower=1e-9)                           # keeps the division finite; masked off below
+    wx, wz = (s.zz * s.xb - s.xz * s.zb) / det, (s.xx * s.zb - s.xz * s.xb) / det
+    return wx, wz, (s.zz / det).mask(flat <= 0, np.inf), (s.xx / det).mask(flat <= 0, np.inf)
+
+
+def shrink(est, se2, grp):
+    """One level: shrink value towards group mean using standard error."""
+    usable = se2.notna() & np.isfinite(se2) & (se2 >= 0)
+    prec = pd.Series(0.0, index=se2.index)
+    prec.loc[usable] = 1 / se2.loc[usable].clip(lower=np.finfo(float).eps)
+    centre = grp.map((est * prec).groupby(grp).sum() / prec.groupby(grp).sum()).fillna(0.0)
+    tau2 = grp.map(pd.Series({g: predict_random_effect(est.loc[i], se2.loc[i], centre.loc[i])[1]
+                              for g, i in est.groupby(grp).groups.items()}))
+    weight = tau2 / (tau2 + se2)
+    posterior = centre + weight * (est - centre)
+    return posterior.where(np.isfinite(posterior), centre)
+
+
+def fit_glove_weights(r):
+    """Calculate glove dependence weights: xx, xz, zx, zz.
+
+    1. Least squares on xx, xz, zx, zz at pitcher, pitcher × pitch type
+    2. 2 level empirical Bayes on each of xx, xz, zx, zz, each shrunk by its own standard error
+        - Pitcher-level: shrink to league distribution of pitcher xx, xz, zx, zz
+        - Pitch type-level: pitch type subtracted by shrunk pitcher-level, shrink to pitch type × hand
+                            distribution of pitch type avg subtracted by pitcher avg
+    xx, zz clipped to 0..1.5; xz, zx to -1.5..1.5
+    """
+    gx, gz = (r.naive_x_in - r.kx).to_numpy(), (r.naive_z_in - r.kz).to_numpy()
+    hand = r.groupby("pitcher_id").hand.first()
+    out = {}
+    for ax, (nv, kc, pl) in AXES.items():
+        b = (r[pl] - r[kc]).to_numpy()
+        # 1. least squares
+        f = pd.DataFrame({"xx": gx * gx, "xz": gx * gz, "zz": gz * gz,
+                          "xb": gx * b, "zb": gz * b, "bb": b * b}, index=r.index)
+        s, n = f.groupby(r.pitcher_id).sum(), f.groupby(r.pitcher_id).size()
+        px, pz, ix, iz = solve_glove_coefs(s)
+        sig2 = ((s.bb - px * s.xb - pz * s.zb) / (n - 2).clip(lower=1)).clip(lower=1e-9)  # scatter about the fit
+        # 2a. pitcher level
+        league = pd.Series("league", index=s.index)
+        wpx, wpz = shrink(px, sig2 * ix, league), shrink(pz, sig2 * iz, league)
+        # 2b. pitch type level (one group per pitch type × hand)
+        c = f.groupby([r.pitcher_id, r.pitch_type]).sum()
+        pid = c.index.get_level_values(0)
+        grp = pd.Series(c.index.get_level_values(1) + "-" + pid.map(hand), index=c.index)
+        cx, cz, icx, icz = solve_glove_coefs(c)
+        csig = pd.Series(pid.map(sig2).to_numpy(), index=c.index)
+        parx = pd.Series(pid.map(wpx).to_numpy(), index=c.index)
+        parz = pd.Series(pid.map(wpz).to_numpy(), index=c.index)
+        wcx, wcz = parx + shrink(cx - parx, csig * icx, grp), parz + shrink(cz - parz, csig * icz, grp)
+        # 3. clip
+        bx, bz = ((WLO, WHI), (-WHI, WHI)) if ax == "x" else ((-WHI, WHI), (WLO, WHI))
+        out[ax] = pd.DataFrame({"wx": wcx.clip(*bx), "wz": wcz.clip(*bz)})
+    return out
+
+
+def apply_glove_weights(f, W):
+    """Target_x/z = mean_x/z + wx * (glove_x - mean_x) + wz * (glove_z - mean_z) + offset.
+
+    wx, wz fit separately for x/z.
+    """
+    gx, gz = (f.naive_x_in - f.kx).to_numpy(), (f.naive_z_in - f.kz).to_numpy()
+    for ax, (nv, kc, pl) in AXES.items():
+        cell = f[CELL].merge(W[ax], left_on=CELL, right_index=True, how="left")
+        wx, wz = cell.wx.fillna(0.0).to_numpy(), cell.wz.fillna(0.0).to_numpy()
+        f["t" + ax] = f[kc].to_numpy() + wx * gx + wz * gz
+    return f
+
+
+def fit_and_apply_offsets(a, e):
+    """Target_x/z = mean_x/z + wx * (glove_x - mean_x) + wz * (glove_z - mean_z) + offset.
+
+    1. Get mean offset per league, pitcher, pitcher × pitch type
+    2. 2 level empirical Bayes on each axis, each mean shrunk by its own standard error
+       (season per-pitch variance / pitch count)
+        - Pitcher-level: shrink to league distribution of pitcher mean leftover, centred on
+                         the league mean
+        - Pitch type-level: pitch type subtracted by shrunk pitcher-level, shrink to pitch type × hand
+                            distribution of pitch type mean subtracted by pitcher mean
+    3. Look up each row's e: its pitch type's offset
+    """
+    hand = a.groupby("pitcher_id").hand.first()
+    out = {}
+    for col in ("rx", "rz"):
+        # 1. league mean and per-pitch variance
+        g0, S = float(a[col].mean()), float(a[col].var())
+        # 2a. pitcher level
+        p = a.groupby("pitcher_id")[col].agg(["mean", "count"])
+        pp = shrink(p["mean"], S / p["count"], pd.Series("league", index=p.index))
+        # 2b. pitch type level (one group per pitch type × hand)
+        c = a.groupby(CELL)[col].agg(["mean", "count"])
+        pid = c.index.get_level_values(0)
+        grp = pd.Series(c.index.get_level_values(1) + "-" + pid.map(hand), index=c.index)
+        par = pd.Series(pid.map(pp).to_numpy(), index=c.index)
+        cp = par + shrink(c["mean"] - par, S / c["count"], grp)
+        # 3. look up e, falling back from an unseen cell to its pitcher and then the league
+        j = e[CELL].merge(cp.rename("v"), left_on=CELL, right_index=True, how="left")
+        j = j.merge(pp.rename("vp"), left_on="pitcher_id", right_index=True, how="left")
+        out[col] = j.v.fillna(j.vp).fillna(g0).to_numpy()
+    return out["rx"], out["rz"]
+
+
+def infer_targets(tr, te):
+    """Infer targets with glove weights & offsets. Fit on tr, applied to te.
+
+    Target_x = mean_glove_x + xx * (glove_x - mean_glove_x) + xz * (glove_z - mean_glove_z) + offset_x
+    Target_z = mean_glove_z + zx * (glove_x - mean_glove_x) + zz * (glove_z - mean_glove_z) + offset_z
+
+    mean_glove is per pitcher × pitch type from tr. The chain passes the same frame twice;
+    opencommand.py passes half a season and scores the other half.
+    """
+    cen = tr.groupby(CELL)[["naive_x_in", "naive_z_in"]].mean().rename(
+        columns={"naive_x_in": "kx", "naive_z_in": "kz"})
+    a = tr.merge(cen, left_on=CELL, right_index=True, how="left")
+    e = te.merge(cen, left_on=CELL, right_index=True, how="left")
+    # An unseen pitch type has no training centre. Its observed glove is the neutral
+    # centre, then the offset hierarchy falls back to the pitcher or league value.
+    e["kx"] = e.kx.fillna(e.naive_x_in)
+    e["kz"] = e.kz.fillna(e.naive_z_in)
+    W = fit_glove_weights(a)
+    a, e = apply_glove_weights(a, W), apply_glove_weights(e, W)
+    a["rx"], a["rz"] = a.plate_x_in - a.tx, a.plate_z_in - a.tz
+    ox, oz = fit_and_apply_offsets(a, e)
+    return e.tx.to_numpy() + ox, e.tz.to_numpy() + oz
+
+
 if __name__ == "__main__":
     year = sys.argv[1] if len(sys.argv) > 1 else "2026"
     base = DATA / year
     pbp = pd.read_csv(base / "pbp_info.csv.gz")
-    info = pbp.set_index("play_id")[["game_pk", "home_team", "pitch_type", "pitcher_id", "plate_x", "plate_z"]]
+    info = pbp.set_index("play_id")[["game_pk", "home_team", "pitch_type", "pitcher_id",
+                                     "plate_x", "plate_z"]]
+    hand = pbp.groupby("pitcher_id").x0.median().lt(0).map({True: "R", False: "L"})   # release side
 
     fields = info[["game_pk", "home_team", "plate_x", "plate_z"]]
     by_game = {str(g): d.drop(columns="game_pk").to_dict("index")
@@ -87,11 +275,13 @@ if __name__ == "__main__":
                        & (tg["naive_z_in"] > z_lo) & (tg["naive_z_in"] < z_hi))
 
     # inferred targets
-    offset_key = [tg["play_id"].map(info["pitcher_id"]), pt]
-    for ax in ("x", "z"):
-        resid = (tg[f"plate_{ax}_in"] - tg[f"naive_{ax}_in"]).where(tg["plausible"])
-        offset = resid.groupby(offset_key).transform("mean")
-        tg[f"inferred_{ax}_in"] = (tg[f"naive_{ax}_in"] + offset).where(tg["plausible"])
+    a = tg.assign(pitcher_id=tg["play_id"].map(info["pitcher_id"]), pitch_type=pt)
+    a = a[tg["plausible"]].dropna(subset=["pitcher_id", "pitch_type"])
+    a["pitcher_id"] = a["pitcher_id"].astype(int)
+    a["hand"] = a["pitcher_id"].map(hand)
+    ix, iz = infer_targets(a, a)
+    tg["inferred_x_in"], tg["inferred_z_in"] = np.nan, np.nan
+    tg.loc[a.index, ["inferred_x_in", "inferred_z_in"]] = np.c_[ix, iz]
 
     tg.to_csv(base / "targets.csv.gz", index=False, lineterminator="\n",
               compression={"method": "gzip", "compresslevel": 6})
