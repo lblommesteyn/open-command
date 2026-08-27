@@ -1,4 +1,4 @@
-OPENCOMMAND VALIDATIONS 2025/exports
+OPENCOMMAND VALIDATIONS 2025
 ================================================================
 
 MEDIAN MISS

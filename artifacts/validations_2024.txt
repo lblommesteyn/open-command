@@ -1,4 +1,4 @@
-OPENCOMMAND VALIDATIONS 2024/exports
+OPENCOMMAND VALIDATIONS 2024
 ================================================================
 
 MEDIAN MISS
@@ -83,7 +83,7 @@ STABILIZATION (cronbach's alpha, using mean miss)
 
 STICKINESS
 ----------------------------------------------------------------
-  skipped: no 2023/exports tree on disk
+  skipped: no 2023 tree on disk
 
 PIPELINE FUNNEL
 ----------------------------------------------------------------
