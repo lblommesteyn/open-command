@@ -54,7 +54,7 @@ LATENESS_IN_PER_S = 15.0    # penalty factor peak being far from release
 
 CELL = ["pitcher_id", "pitch_type"]
 AXES = {"x": ("naive_x_in", "kx", "plate_x_in"), "z": ("naive_z_in", "kz", "plate_z_in")}
-WLO, WHI = 0.0, 1.5
+WX, WZ, WCROSS = (0.0, 1.3), (-0.2, 1.1), (-1.5, 1.5)   # own-x, own-z and cross-term weight bounds
 
 
 def select_target(g):
@@ -138,7 +138,7 @@ def fit_glove_weights(r):
         - Pitcher-level: shrink to league distribution of pitcher xx, xz, zx, zz
         - Pitch type-level: pitch type subtracted by shrunk pitcher-level, shrink to pitch type × hand
                             distribution of pitch type avg subtracted by pitcher avg
-    xx, zz clipped to 0..1.5; xz, zx to -1.5..1.5
+    xx clipped to 0..1.3, zz to -0.2..1.1; xz, zx to -1.5..1.5
     """
     gx, gz = (r.naive_x_in - r.kx).to_numpy(), (r.naive_z_in - r.kz).to_numpy()
     hand = r.groupby("pitcher_id").hand.first()
@@ -164,7 +164,7 @@ def fit_glove_weights(r):
         parz = pd.Series(pid.map(wpz).to_numpy(), index=c.index)
         wcx, wcz = parx + shrink(cx - parx, csig * icx, grp), parz + shrink(cz - parz, csig * icz, grp)
         # 3. clip
-        bx, bz = ((WLO, WHI), (-WHI, WHI)) if ax == "x" else ((-WHI, WHI), (WLO, WHI))
+        bx, bz = (WX, WCROSS) if ax == "x" else (WCROSS, WZ)
         out[ax] = pd.DataFrame({"wx": wcx.clip(*bx), "wz": wcz.clip(*bz)})
     return out
 

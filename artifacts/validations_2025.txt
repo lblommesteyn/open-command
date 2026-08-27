@@ -1,4 +1,4 @@
-OPENCOMMAND VALIDATIONS 2025
+OPENCOMMAND VALIDATIONS 2025/exports
 ================================================================
 
 MEDIAN MISS
@@ -18,42 +18,42 @@ HELD-OUT ACCURACY (rmse, random 50/50 train/test split)
   fixed offset         13.16   13.64 (+0.31)     12.93   13.06 (+0.12)
   inferred             12.89   13.20 (+0.27)     12.49   12.63 (+0.13)
 
-FLATNESS (per pitcher median miss on n random pitches)
+FLATNESS (per pitcher median miss on the first n pitches of the season)
 ----------------------------------------------------------------
                           n=10        n=30       n=100       n=300      n=1000        full
   pitchers                 849         802         716         551         232         716
-  naive                  11.59       11.30       11.22       11.12       10.79       11.18
-  fixed offset            8.08        9.54        9.99       10.07        9.82       10.14
-  inferred                9.75        9.95        9.92        9.85        9.60        9.91
+  naive                  11.10       11.27       11.20       10.98       10.82       11.18
+  fixed offset            7.73        9.31        9.82        9.94        9.79       10.14
+  inferred                9.47        9.66        9.70        9.71        9.57        9.91
 
-CONFIDENCE INTERVAL (median miss calculated on n random pitches vs end of season)
+CONFIDENCE INTERVAL (median miss calculated on the first n pitches of the season vs end of season)
 ----------------------------------------------------------------
                               n=10      n=30     n=100     n=300    n=1000      full
   naive, pitchers              849       802       716       551       232       870
-    avg deviation             1.96      1.10      0.54      0.26      0.10      0.00
-    90%                       4.70      2.67      1.31      0.75      0.31      0.00
-    bias                      0.09      0.02      0.04      0.01      0.00      0.00
+    avg deviation             2.02      1.22      0.62      0.34      0.15      0.00
+    90%                       4.82      3.03      1.72      0.94      0.50      0.00
+    bias                     -0.18     -0.13     -0.00     -0.02      0.00      0.00
 
   fixed offset, pitchers       849       802       716       551       232       870
-    avg deviation             2.32      1.03      0.47      0.26      0.10      0.00
-    90%                       5.09      2.61      1.26      0.73      0.29      0.00
-    bias                     -2.02     -0.60     -0.14     -0.00      0.01      0.00
+    avg deviation             2.64      1.23      0.59      0.33      0.12      0.00
+    90%                       5.22      2.80      1.47      0.79      0.44      0.00
+    bias                     -2.45     -0.90     -0.31     -0.14     -0.03      0.00
 
   inferred, pitchers           849       802       716       551       232       870
-    avg deviation             1.62      0.87      0.49      0.23      0.09      0.00
-    90%                       3.95      2.27      1.22      0.65      0.26      0.00
-    bias                     -0.26     -0.01      0.05      0.01      0.00      0.00
+    avg deviation             1.73      1.00      0.53      0.29      0.12      0.00
+    90%                       4.07      2.36      1.24      0.69      0.35      0.00
+    bias                     -0.47     -0.24     -0.18     -0.07     -0.01      0.00
 
 CORRELATIONS (Pearson, whole season)
 ----------------------------------------------------------------
   Min. 500 pitches, N = 478
 
                                              naive              fixed offset                  inferred
-  BB%                      +0.464 [+0.396, +0.533]   +0.552 [+0.483, +0.611]   +0.564 [+0.495, +0.623]
-  Location+                -0.406 [-0.482, -0.335]   -0.578 [-0.632, -0.515]   -0.606 [-0.657, -0.546]
-  Stuff+                   +0.161 [+0.068, +0.254]   +0.184 [+0.087, +0.278]   +0.198 [+0.098, +0.292]
-  xERA                     -0.071 [-0.160, +0.016]   -0.048 [-0.140, +0.041]   -0.064 [-0.149, +0.022]
-  xERA | Stuff+            +0.027 [-0.064, +0.120]   +0.074 [-0.021, +0.168]   +0.064 [-0.029, +0.155]
+  BB%                      +0.464 [+0.396, +0.533]   +0.552 [+0.483, +0.611]   +0.564 [+0.496, +0.624]
+  Location+                -0.406 [-0.482, -0.335]   -0.578 [-0.632, -0.515]   -0.607 [-0.657, -0.547]
+  Stuff+                   +0.161 [+0.068, +0.254]   +0.184 [+0.087, +0.278]   +0.197 [+0.099, +0.291]
+  xERA                     -0.071 [-0.160, +0.016]   -0.048 [-0.140, +0.041]   -0.063 [-0.148, +0.022]
+  xERA | Stuff+            +0.027 [-0.064, +0.120]   +0.074 [-0.021, +0.168]   +0.064 [-0.028, +0.156]
 
   For reference, Location+ correlation to BB%: -0.635 [-0.696, -0.564]
 
@@ -62,10 +62,10 @@ CORRELATIONS (Pearson, whole season)
   Min. 500 pitches, N = 297
 
                                              naive              fixed offset                  inferred        the outcome itself
-  next BB%                 +0.360 [+0.283, +0.440]   +0.455 [+0.372, +0.533]   +0.493 [+0.413, +0.569]   +0.541 [+0.456, +0.620]
-  next Location+           -0.300 [-0.391, -0.209]   -0.444 [-0.526, -0.348]   -0.475 [-0.554, -0.383]   +0.609 [+0.529, +0.680]
-  next Stuff+              +0.112 [-0.004, +0.233]   +0.211 [+0.084, +0.337]   +0.235 [+0.105, +0.356]   +0.838 [+0.796, +0.876]
-  next xERA                -0.111 [-0.210, -0.003]   -0.110 [-0.219, +0.011]   -0.133 [-0.243, -0.015]   +0.360 [+0.258, +0.464]
+  next BB%                 +0.360 [+0.283, +0.440]   +0.455 [+0.372, +0.533]   +0.493 [+0.414, +0.569]   +0.541 [+0.456, +0.620]
+  next Location+           -0.300 [-0.391, -0.209]   -0.444 [-0.526, -0.348]   -0.476 [-0.554, -0.384]   +0.609 [+0.529, +0.680]
+  next Stuff+              +0.112 [-0.004, +0.233]   +0.211 [+0.084, +0.337]   +0.235 [+0.104, +0.356]   +0.838 [+0.796, +0.876]
+  next xERA                -0.111 [-0.210, -0.003]   -0.110 [-0.219, +0.011]   -0.133 [-0.242, -0.015]   +0.360 [+0.258, +0.464]
   next xERA | Stuff+       -0.055 [-0.153, +0.051]   -0.024 [-0.137, +0.094]   -0.040 [-0.148, +0.080]   +0.086 [-0.022, +0.204]
 
 STABILIZATION (cronbach's alpha, using mean miss)
@@ -86,8 +86,8 @@ STICKINESS
   year-over-year
 
                            naive  fixed offset      inferred     Location+        Stuff+           BB%            K%           HR%      pitchers
-  500+ pitches            +0.670        +0.756        +0.848        +0.516        +0.752        +0.516        +0.684        +0.256           298
-  100+ pitches            +0.556        +0.633        +0.736        +0.405        +0.732        +0.283        +0.527        +0.175           506
+  500+ pitches            +0.670        +0.756        +0.849        +0.516        +0.752        +0.516        +0.684        +0.256           298
+  100+ pitches            +0.556        +0.633        +0.737        +0.405        +0.732        +0.283        +0.527        +0.175           506
 
 PIPELINE FUNNEL
 ----------------------------------------------------------------
@@ -123,10 +123,10 @@ COMMAND DISTRIBUTION (percentiles of the per-pitcher median miss, inches)
   FF four-seam              581    7.11    8.28    8.88    9.50   10.14   10.80   13.25
   SI sinker                 380    6.77    7.97    8.54    9.18    9.86   10.55   12.37
   FC cutter                 215    7.02    8.15    8.74    9.36   10.00   10.62   12.80
-  SL slider                 393    7.36    8.70    9.39   10.24   10.93   11.82   14.46
-  ST sweeper                228    7.73    9.26    9.82   10.39   11.23   12.12   14.69
-  CU+KC curve               248    8.22    9.68   10.40   11.05   12.06   13.21   16.77
-  CH change                 301    7.52    8.82    9.50   10.28   10.95   11.74   15.04
+  SL slider                 393    7.36    8.70    9.39   10.23   10.93   11.82   14.46
+  ST sweeper                228    7.73    9.26    9.82   10.39   11.25   12.12   14.79
+  CU+KC curve               248    8.22    9.68   10.40   11.08   12.06   13.21   16.77
+  CH change                 301    7.52    8.82    9.50   10.30   10.95   11.74   15.04
   FS split                   95    7.48    9.19    9.66   10.74   11.83   12.66   14.75
 
 Best command (inferred median miss, min 100 scored pitches):
@@ -135,7 +135,7 @@ Best command (inferred median miss, min 100 scored pitches):
   Spencer Turnbull           7.69 in  (naive 9.68, n=122)
   Aaron Nola                 7.75 in  (naive 9.56, n=1527)
   Casey Lawrence             7.79 in  (naive 10.59, n=260)
-  Hoby Milner                7.87 in  (naive 9.37, n=885)
+  Hoby Milner                7.86 in  (naive 9.37, n=885)
   Tyler Mahle                7.89 in  (naive 11.24, n=1151)
   Sammy Peralta              7.90 in  (naive 9.73, n=145)
   Chris Paddack              7.96 in  (naive 9.62, n=2166)
@@ -242,7 +242,6 @@ Best command (inferred median miss, min 100 scored pitches):
   Zebby Matthews             9.09 in  (naive 10.70, n=1082)
   Zack Littell               9.09 in  (naive 10.29, n=2659)
   Gunnar Hoglund             9.09 in  (naive 9.52, n=520)
-  Cristopher Sánchez         9.11 in  (naive 10.35, n=2849)
   Bowden Francis             9.11 in  (naive 10.82, n=1041)
   Reese Olson                9.12 in  (naive 12.59, n=1098)
   Dylan Lee                  9.12 in  (naive 10.32, n=1046)
@@ -254,6 +253,7 @@ Best command (inferred median miss, min 100 scored pitches):
   Chad Green                 9.16 in  (naive 9.76, n=668)
   Ryan Bergert               9.17 in  (naive 10.14, n=1057)
   Justin Verlander           9.17 in  (naive 10.64, n=2420)
+  Cristopher Sánchez         9.17 in  (naive 10.35, n=2849)
   Ethan Roberts              9.17 in  (naive 10.06, n=112)
   Lucas Erceg                9.18 in  (naive 10.74, n=883)
   Collin Snider              9.18 in  (naive 10.08, n=420)
@@ -266,9 +266,9 @@ Best command (inferred median miss, min 100 scored pitches):
   Luke Weaver                9.21 in  (naive 10.49, n=966)
   Anthony Molina             9.21 in  (naive 9.99, n=551)
   Liam Hendriks              9.21 in  (naive 11.41, n=214)
+  Chase Lee                  9.22 in  (naive 10.44, n=520)
   Jameson Taillon            9.22 in  (naive 10.46, n=2010)
   Randy Vásquez              9.23 in  (naive 10.03, n=1806)
-  Chase Lee                  9.23 in  (naive 10.44, n=520)
   Nestor Cortes              9.24 in  (naive 10.31, n=527)
   Casey Legumina             9.24 in  (naive 10.46, n=796)
   Jimmy Herget               9.24 in  (naive 10.66, n=1095)
@@ -305,6 +305,7 @@ Best command (inferred median miss, min 100 scored pitches):
   Paul Sewald                9.36 in  (naive 11.80, n=291)
   Garrett Whitlock           9.36 in  (naive 10.74, n=1068)
   Devin Williams             9.36 in  (naive 12.76, n=1079)
+  José Castillo              9.36 in  (naive 11.90, n=476)
   Tayler Scott               9.37 in  (naive 11.87, n=476)
   Scott McGough              9.37 in  (naive 11.40, n=285)
   Brandon Walter             9.38 in  (naive 11.16, n=775)
@@ -313,8 +314,6 @@ Best command (inferred median miss, min 100 scored pitches):
   Jeffrey Springs            9.38 in  (naive 10.12, n=2655)
   Blake Snell                9.39 in  (naive 10.86, n=1506)
   Paul Blackburn             9.39 in  (naive 11.44, n=568)
-  José Castillo              9.39 in  (naive 11.90, n=476)
-  Tanner Banks               9.40 in  (naive 10.17, n=926)
   Chris Bassitt              9.40 in  (naive 10.22, n=2753)
   Sean Manaea                9.40 in  (naive 10.87, n=957)
   Carson Fulmer              9.41 in  (naive 10.64, n=435)
@@ -326,6 +325,7 @@ Best command (inferred median miss, min 100 scored pitches):
   Yennier Cano               9.42 in  (naive 10.25, n=907)
   Emmanuel Clase             9.42 in  (naive 10.43, n=672)
   Brent Suter                9.43 in  (naive 10.30, n=960)
+  Tanner Banks               9.43 in  (naive 10.17, n=926)
   Nabil Crismatt             9.43 in  (naive 11.38, n=477)
   Emerson Hancock            9.44 in  (naive 11.88, n=1263)
   Michael Petersen           9.44 in  (naive 12.48, n=315)
@@ -384,8 +384,8 @@ Best command (inferred median miss, min 100 scored pitches):
   Matt Gage                  9.57 in  (naive 11.16, n=467)
   Nick Pivetta               9.58 in  (naive 11.13, n=2753)
   John Curtiss               9.58 in  (naive 10.62, n=524)
-  Orlando Ribalta            9.58 in  (naive 11.73, n=486)
   Jacob Lopez                9.58 in  (naive 10.95, n=1585)
+  Orlando Ribalta            9.59 in  (naive 11.73, n=486)
   Kyle Backhus               9.59 in  (naive 10.12, n=394)
   Chris Roycroft             9.59 in  (naive 10.50, n=381)
   Tim Mayza                  9.59 in  (naive 10.24, n=291)
@@ -443,14 +443,14 @@ Best command (inferred median miss, min 100 scored pitches):
   Carlos Carrasco            9.76 in  (naive 11.08, n=621)
   Brent Headrick             9.77 in  (naive 10.76, n=300)
   Brock Stewart              9.77 in  (naive 11.11, n=565)
+  Shota Imanaga              9.77 in  (naive 11.30, n=1942)
   Mason Fluharty             9.78 in  (naive 10.22, n=779)
   Sean Guenther              9.78 in  (naive 9.88, n=151)
   Cade Povich                9.78 in  (naive 10.62, n=1695)
   Jordan Wicks               9.78 in  (naive 10.33, n=202)
   Phil Maton                 9.78 in  (naive 10.85, n=984)
-  Dennis Santana             9.78 in  (naive 10.82, n=929)
   Nolan McLean               9.79 in  (naive 11.79, n=631)
-  Jhoan Duran                9.80 in  (naive 10.80, n=1050)
+  Dennis Santana             9.79 in  (naive 10.82, n=929)
   Eric Orze                  9.80 in  (naive 12.37, n=625)
   Tylor Megill               9.80 in  (naive 12.56, n=1034)
   Daniel Robert              9.80 in  (naive 10.26, n=228)
@@ -459,15 +459,15 @@ Best command (inferred median miss, min 100 scored pitches):
   Ronel Blanco               9.81 in  (naive 10.79, n=697)
   Shane Smith                9.81 in  (naive 10.75, n=2265)
   Tanner Scott               9.81 in  (naive 10.50, n=876)
+  Jhoan Duran                9.81 in  (naive 10.80, n=1050)
   Dylan Dodd                 9.81 in  (naive 11.06, n=523)
-  Shota Imanaga              9.82 in  (naive 11.30, n=1942)
   Blake Treinen              9.82 in  (naive 12.11, n=598)
   Cade Horton                9.83 in  (naive 11.36, n=1655)
   Bryce Miller               9.84 in  (naive 11.00, n=1435)
   Garrett Crochet            9.84 in  (naive 10.77, n=2799)
   Andrew Saalfrank           9.84 in  (naive 11.16, n=411)
   Wandy Peralta              9.84 in  (naive 11.21, n=971)
-  Tommy Nance                9.84 in  (naive 10.73, n=444)
+  Tommy Nance                9.85 in  (naive 10.73, n=444)
   Andre Granillo             9.85 in  (naive 11.14, n=307)
   Austin Gomber              9.85 in  (naive 10.06, n=923)
   Elvin Rodríguez            9.85 in  (naive 12.32, n=300)
@@ -531,11 +531,11 @@ Best command (inferred median miss, min 100 scored pitches):
   Chase Silseth             10.03 in  (naive 12.06, n=201)
   Brandon Sproat            10.03 in  (naive 12.46, n=279)
   Gordon Graceffo           10.03 in  (naive 11.26, n=652)
-  Anthony Bender            10.04 in  (naive 12.83, n=743)
   Tommy Henry               10.04 in  (naive 12.30, n=102)
   Edward Cabrera            10.04 in  (naive 13.16, n=2018)
   Steven Cruz               10.05 in  (naive 10.87, n=613)
   Brad Keller               10.05 in  (naive 10.80, n=1045)
+  Anthony Bender            10.05 in  (naive 12.83, n=743)
   Sean Burke                10.05 in  (naive 10.80, n=2225)
   David Festa               10.06 in  (naive 12.51, n=796)
   Nick Anderson             10.06 in  (naive 11.12, n=226)
@@ -589,8 +589,9 @@ Best command (inferred median miss, min 100 scored pitches):
   Sean Newcomb              10.24 in  (naive 10.33, n=1381)
   Juan Burgos               10.24 in  (naive 12.31, n=209)
   Dylan Cease               10.25 in  (naive 11.79, n=2923)
-  Grant Taylor              10.26 in  (naive 10.89, n=583)
+  Trevor Megill             10.26 in  (naive 12.23, n=728)
   Mitch Farris              10.26 in  (naive 12.97, n=386)
+  Grant Taylor              10.26 in  (naive 10.89, n=583)
   Shaun Anderson            10.26 in  (naive 12.16, n=204)
   Easton Lucas              10.26 in  (naive 10.72, n=428)
   Aaron Bummer              10.27 in  (naive 12.56, n=793)
@@ -604,11 +605,12 @@ Best command (inferred median miss, min 100 scored pitches):
   Isaac Mattson             10.28 in  (naive 11.36, n=726)
   Reid Detmers              10.28 in  (naive 12.17, n=976)
   Albert Suárez             10.28 in  (naive 11.73, n=160)
+  Forrest Whitley           10.29 in  (naive 11.64, n=245)
   Eduardo Salazar           10.29 in  (naive 11.83, n=516)
   Matt Sauer                10.29 in  (naive 12.35, n=471)
   Brock Burke               10.29 in  (naive 11.06, n=972)
-  Trevor Megill             10.30 in  (naive 12.23, n=728)
   Grant Wolfram             10.30 in  (naive 11.61, n=434)
+  Justin Steele             10.30 in  (naive 10.82, n=278)
   Bryan Baker               10.30 in  (naive 10.68, n=1032)
   Carson Spiers             10.31 in  (naive 11.57, n=230)
   Bradley Blalock           10.31 in  (naive 10.74, n=867)
@@ -616,7 +618,6 @@ Best command (inferred median miss, min 100 scored pitches):
   Rich Hill                 10.31 in  (naive 11.80, n=162)
   Rob Zastryzny             10.32 in  (naive 11.41, n=277)
   Jeremiah Estrada          10.33 in  (naive 11.30, n=1169)
-  Tommy Kahnle              10.33 in  (naive 11.96, n=965)
   Yu Darvish                10.33 in  (naive 11.00, n=1068)
   Chris Stratton            10.34 in  (naive 11.67, n=361)
   Matt Strahm               10.35 in  (naive 10.84, n=950)
@@ -625,15 +626,15 @@ Best command (inferred median miss, min 100 scored pitches):
   Carson Seymour            10.35 in  (naive 11.19, n=535)
   Anthony Veneziano         10.35 in  (naive 12.59, n=413)
   Logan Gilbert             10.35 in  (naive 12.55, n=2009)
-  Justin Steele             10.35 in  (naive 10.82, n=278)
   Bryce Jarvis              10.36 in  (naive 11.20, n=361)
   Yohan Ramírez             10.36 in  (naive 11.33, n=573)
+  Kodai Senga               10.36 in  (naive 14.00, n=1695)
+  Shohei Ohtani             10.36 in  (naive 11.50, n=1033)
   Colin Holderman           10.37 in  (naive 11.39, n=479)
   Luke Jackson              10.37 in  (naive 12.34, n=673)
   Tony Gonsolin             10.37 in  (naive 13.30, n=490)
   Ian Seymour               10.37 in  (naive 11.91, n=910)
   Connor Gillispie          10.37 in  (naive 12.27, n=415)
-  Forrest Whitley           10.39 in  (naive 11.64, n=245)
   Valente Bellozo           10.39 in  (naive 12.23, n=1249)
   Anthony Misiewicz         10.39 in  (naive 11.80, n=101)
   Andre Pallante            10.39 in  (naive 11.35, n=2518)
@@ -644,14 +645,13 @@ Best command (inferred median miss, min 100 scored pitches):
   Ryan Walker               10.40 in  (naive 11.94, n=933)
   Connelly Early            10.40 in  (naive 10.68, n=394)
   Ryan Rolison              10.40 in  (naive 11.06, n=639)
-  Kodai Senga               10.40 in  (naive 14.00, n=1695)
   Matt Brash                10.41 in  (naive 12.93, n=759)
+  Kris Bubic                10.41 in  (naive 11.36, n=1533)
   Jack Perkins              10.41 in  (naive 11.67, n=622)
   Luinder Avila             10.41 in  (naive 10.97, n=199)
   Andrés Muñoz              10.42 in  (naive 14.24, n=1009)
   Mitchell Parker           10.42 in  (naive 11.31, n=2467)
   Bennett Sousa             10.42 in  (naive 11.33, n=682)
-  Kris Bubic                10.42 in  (naive 11.36, n=1533)
   Griffin Canning           10.42 in  (naive 11.39, n=967)
   Sam Aldegheri             10.43 in  (naive 12.19, n=296)
   McCade Brown              10.43 in  (naive 10.94, n=467)
@@ -662,9 +662,8 @@ Best command (inferred median miss, min 100 scored pitches):
   Eli Morgan                10.44 in  (naive 12.87, n=128)
   Tyler Ferguson            10.44 in  (naive 13.19, n=877)
   Colin Selby               10.45 in  (naive 11.14, n=206)
-  Hogan Harris              10.45 in  (naive 10.88, n=1030)
   Ben Casparius             10.45 in  (naive 12.51, n=1205)
-  Shohei Ohtani             10.45 in  (naive 11.50, n=1033)
+  Hogan Harris              10.45 in  (naive 10.88, n=1030)
   Seth Johnson              10.46 in  (naive 11.32, n=211)
   Cam Booser                10.46 in  (naive 11.43, n=540)
   Carlos Rodriguez          10.46 in  (naive 12.47, n=144)
@@ -673,6 +672,7 @@ Best command (inferred median miss, min 100 scored pitches):
   Max Lazar                 10.47 in  (naive 10.62, n=628)
   Jake Eder                 10.48 in  (naive 12.32, n=299)
   Dauri Moreta              10.48 in  (naive 10.80, n=268)
+  Tommy Kahnle              10.49 in  (naive 11.96, n=965)
   Rico Garcia               10.49 in  (naive 11.67, n=559)
   Kenta Maeda               10.49 in  (naive 14.70, n=162)
   Roki Sasaki               10.50 in  (naive 13.49, n=565)
@@ -692,15 +692,15 @@ Best command (inferred median miss, min 100 scored pitches):
   Daniel Palencia           10.55 in  (naive 12.69, n=861)
   Lance McCullers Jr.       10.56 in  (naive 11.81, n=1019)
   Brant Hurter              10.56 in  (naive 12.38, n=973)
+  Jason Adam                10.56 in  (naive 12.17, n=1022)
   George Soriano            10.56 in  (naive 13.13, n=641)
-  Jason Adam                10.57 in  (naive 12.17, n=1022)
   Jordan Romano             10.57 in  (naive 11.52, n=639)
-  Carson Palmquist          10.57 in  (naive 11.87, n=652)
   Mason Barnett             10.58 in  (naive 11.07, n=419)
   Chase Petty               10.58 in  (naive 11.68, n=161)
   Luis Garcia               10.59 in  (naive 11.34, n=102)
   Yaramil Hiraldo           10.59 in  (naive 12.04, n=291)
   Wander Suero              10.59 in  (naive 12.10, n=135)
+  Carson Palmquist          10.59 in  (naive 11.87, n=652)
   Kai-Wei Teng              10.59 in  (naive 11.40, n=508)
   Ron Marinaccio            10.60 in  (naive 12.27, n=156)
   Cristian Javier           10.60 in  (naive 12.79, n=588)
@@ -715,7 +715,6 @@ Best command (inferred median miss, min 100 scored pitches):
   Kaleb Ort                 10.62 in  (naive 11.71, n=752)
   Tobias Myers              10.62 in  (naive 11.25, n=711)
   Justin Lawrence           10.62 in  (naive 11.40, n=257)
-  Noah Davis                10.63 in  (naive 12.97, n=236)
   Carlos Vargas             10.64 in  (naive 12.43, n=1008)
   Cionel Pérez              10.64 in  (naive 11.41, n=398)
   Danny Coulombe            10.64 in  (naive 12.76, n=644)
@@ -759,9 +758,10 @@ Best command (inferred median miss, min 100 scored pitches):
   Jeff Hoffman              10.81 in  (naive 11.79, n=1124)
   Konnor Pilkington         10.81 in  (naive 11.83, n=479)
   Tanner Rainey             10.82 in  (naive 12.34, n=195)
+  Aaron Ashby               10.84 in  (naive 12.19, n=1024)
   Jorge Alcala              10.84 in  (naive 11.53, n=956)
   Pete Fairbanks            10.85 in  (naive 11.68, n=929)
-  Aaron Ashby               10.85 in  (naive 12.19, n=1024)
+  Noah Davis                10.86 in  (naive 12.97, n=236)
   José Buttó                10.86 in  (naive 13.48, n=993)
   Yariel Rodríguez          10.87 in  (naive 11.91, n=1121)
   Michael Kopech            10.88 in  (naive 14.61, n=227)
@@ -781,17 +781,17 @@ Best command (inferred median miss, min 100 scored pitches):
   Joey Cantillo             11.00 in  (naive 11.30, n=1501)
   Juan Mejia                11.01 in  (naive 11.44, n=987)
   Edgardo Henriquez         11.04 in  (naive 12.73, n=293)
+  Danny Young               11.04 in  (naive 12.50, n=149)
   Brandyn Garcia            11.05 in  (naive 11.82, n=260)
+  Jack Leiter               11.06 in  (naive 12.09, n=2306)
   Will Klein                11.06 in  (naive 13.70, n=293)
   Brendon Little            11.06 in  (naive 14.22, n=1170)
-  Jack Leiter               11.07 in  (naive 12.09, n=2306)
   Jack Dreyer               11.07 in  (naive 12.00, n=1164)
   Corbin Martin             11.09 in  (naive 12.36, n=301)
   Tim Herrin                11.10 in  (naive 11.66, n=676)
   Gavin Hollowell           11.10 in  (naive 11.41, n=167)
   Dane Dunning              11.10 in  (naive 12.06, n=361)
   Luis Peralta              11.10 in  (naive 12.22, n=402)
-  Danny Young               11.11 in  (naive 12.50, n=149)
   Ryan Zeferjahn            11.12 in  (naive 12.04, n=996)
   Roddery Muñoz             11.13 in  (naive 12.51, n=124)
   Gregory Soto              11.15 in  (naive 11.51, n=956)
@@ -801,7 +801,7 @@ Best command (inferred median miss, min 100 scored pitches):
   Chris Murphy              11.17 in  (naive 11.93, n=498)
   Colin Poche               11.18 in  (naive 12.80, n=237)
   Connor Phillips           11.18 in  (naive 12.53, n=361)
-  Joe Boyle                 11.19 in  (naive 13.88, n=869)
+  Joe Boyle                 11.20 in  (naive 13.88, n=869)
   Seth Martinez             11.20 in  (naive 14.27, n=115)
   Mason Miller              11.21 in  (naive 11.89, n=969)
   Trey Yesavage             11.22 in  (naive 12.43, n=422)
