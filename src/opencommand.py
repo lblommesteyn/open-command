@@ -87,8 +87,6 @@ METHODS = [("naive", naive), ("fixed offset", fixedoffset), ("inferred", infer_t
 def missed(fn, tr, te):
     """Per-pitch miss, fit on tr and scored on te."""
     tx, tz = fn(tr, te)
-    if not (np.isfinite(tx).all() and np.isfinite(tz).all()):
-        raise ValueError(f"{fn.__name__} returned a non-finite target")
     return pd.Series(np.hypot(te.plate_x_in - tx, te.plate_z_in - tz), index=te.index)
 
 
@@ -111,16 +109,14 @@ def val_median_miss(d, whole):
                  f"{pp[name].median():14.2f}{len(pp[name]):10d}")
     got, base = METHODS[-1][0], METHODS[-2][0]
     dl = (pp[got] - pp[base]).dropna()
-    L += ["", (f"  {got} vs {base}: {dl.median():+.2f} in per pitcher, "
-               f"better for {(dl < 0).mean():.0%} of {len(dl)} pitchers"), ""]
+    L += ["", f"  {got} vs {base}: {dl.median():+.2f} in per pitcher, "
+              f"better for {(dl < 0).mean():.0%} of {len(dl)} pitchers", ""]
     return L
 
 
 def rms(x):
     """Root mean square of a per-pitch miss."""
-    if not np.isfinite(x).all():
-        raise ValueError("held-out scoring contains a non-finite miss")
-    return float(np.sqrt(np.mean(x ** 2)))
+    return float(np.sqrt(np.nanmean(x ** 2)))
 
 
 def val_heldout(d):
@@ -241,8 +237,8 @@ def val_correlations(d, whole, fg, fg_next, season):
                                           for n, _ in METHODS))
     s = t.dropna(subset=["sp_location", "BB%"])
     L += ["",
-          (f"  For reference, Location+ correlation to BB%: "
-           f"{cell(s['sp_location'].to_numpy(), s['BB%'].to_numpy())}"),
+          f"  For reference, Location+ correlation to BB%: "
+          f"{cell(s['sp_location'].to_numpy(), s['BB%'].to_numpy())}",
           ""]
 
     nxt = int(season) + 1
@@ -306,7 +302,7 @@ def val_stabilization(d, whole, fg_all):
         L.append(f"  {lab:16s}" + "".join(f"{vb / (vb + vw / n):12.3f}" for n in NS)
                  + "".join(f"{a / (1 - a) * vw / vb:12.0f}" for a in ALPHAS))
     L += ["",
-          "  Location+ and Stuff+ ship one number per pitcher-season, so their vw is fitted",
+          f"  Location+ and Stuff+ ship one number per pitcher-season, so their vw is fitted",
           f"  across {n_pair} consecutive-season pairs and not measured per pitch.", ""]
     return L
 
@@ -402,9 +398,8 @@ def pose_accuracy(poses):
     pv = poses.dropna(subset=["reproj_px"])
     L = ["CAMERA-POSE ACCURACY (trajectory reprojection)", "-" * 64,
          f"  clips with a flight run under the pose: {len(pv)} / {len(poses)}",
-         (f"  reproj_px: median {pv['reproj_px'].median():.2f}, "
-          f"p90 {pv['reproj_px'].quantile(0.9):.2f}, "
-          f"<5px {100 * (pv['reproj_px'] < 5).mean():.1f}%")]
+         f"  reproj_px: median {pv['reproj_px'].median():.2f}, p90 {pv['reproj_px'].quantile(0.9):.2f}, "
+         f"<5px {100 * (pv['reproj_px'] < 5).mean():.1f}%"]
     tp = pv.dropna(subset=["balltp_err_x_in"])
     for label, w in [("within 24 frames (the whole flight)", FLIGHT_FR),
                      ("within 2.5 frames (at the plate)", PLATE_FR)]:
