@@ -68,6 +68,17 @@ cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
 x0, x1 = int(max(0, cx - cw / 2)), int(min(1280, cx + cw / 2)); y0, y1 = int(max(0, cy - ch / 2)), int(min(720, cy + ch / 2))
 print("crop", x0, y0, x1, y1)
 capA = cv2.VideoCapture(f"tunnel/clip/{CLIPS['A']}.mp4"); fps = capA.get(cv2.CAP_PROP_FPS); rel = int(round(info["A"]["release_s"] * fps))
+# pitch B's real footage, warped into pitch A's camera (homography fit on projected world points) and ghosted at ALPHA
+OVERLAY = CFG.get("overlay_video", True); ALPHA = CFG.get("alpha", 0.5)
+capB = cv2.VideoCapture(f"tunnel/clip/{CLIPS['B']}.mp4"); fpsB = capB.get(cv2.CAP_PROP_FPS); relB = int(round(info["B"]["release_s"] * fpsB))
+psB = poses.loc[PIDS["B"]]; CB = np.array([psB.Cx, psB.Cy, psB.Cz]); basisB = poselib.camera(CB, psB.pan, psB.tilt, psB.roll)
+projB = lambda X: poselib.project_on(basisB, CB, psB.f_px, X)
+gx, gz = np.meshgrid(np.linspace(-6, 6, 7), np.linspace(0, 9, 7))
+Wpts = np.stack([gx.ravel(), np.full(gx.size, 17 / 12), gz.ravel()], axis=1)
+Hom, _ = cv2.findHomography(projB(Wpts).astype(np.float32), proj(Wpts).astype(np.float32))
+print("B->A shift at plate (px):", (proj(Wpts) - projB(Wpts)).mean(0).round(2))
+def get_frame_B(i):
+    capB.set(cv2.CAP_PROP_POS_FRAMES, i); ok, f = capB.read(); return cv2.warpPerspective(f, Hom, (1280, 720))
 
 def draw_dashed(img, pts, color, thick=1, dash=3):
     pts = pts.astype(int)
@@ -79,8 +90,10 @@ def draw_x(img, p, color, s=6, thick=2):
     x, y = int(p[0]), int(p[1])
     cv2.line(img, (x - s, y - s), (x + s, y + s), color, thick, cv2.LINE_AA); cv2.line(img, (x - s, y + s), (x + s, y - s), color, thick, cv2.LINE_AA)
 
-def video_panel(frame, t_rel, final):
+def video_panel(frame, t_rel, final, frameB=None):
     img = frame.copy()
+    if frameB is not None:
+        img = cv2.addWeighted(img, 1 - ALPHA, frameB, ALPHA, 0)
     for k in "AB":
         draw_dashed(img, proj(info[k]["intent"]), COL[k])
         draw_x(img, proj(info[k]["target"][None])[0], COL[k])
@@ -143,11 +156,14 @@ def get_frame(i):
 frames = []
 n_pre, n_fl = int(PRE_S * fps), int(FLIGHT_S * fps)
 for i in range(-n_pre, 0, 2):
-    frames.append(compose(video_panel(get_frame(rel + i), i / fps, False), schematic(i / fps, False), CFG["pre"]))
+    fb = get_frame_B(relB + int(round(i * fpsB / fps))) if OVERLAY else None
+    frames.append(compose(video_panel(get_frame(rel + i), i / fps, False, fb), schematic(i / fps, False), CFG["pre"]))
 for i in range(0, n_fl + 1):
-    fr = compose(video_panel(get_frame(rel + i), i / fps, False), schematic(i / fps, False), f"1/8 speed.  {i / fps * 1000:4.0f} ms after release.  The batter has to commit by about 200 ms, when the ball is 23.8 ft away.")
+    fb = get_frame_B(relB + int(round(i * fpsB / fps))) if OVERLAY else None
+    fr = compose(video_panel(get_frame(rel + i), i / fps, False, fb), schematic(i / fps, False), f"1/8 speed.  {i / fps * 1000:4.0f} ms after release.  The batter has to commit by about 200 ms, when the ball is 23.8 ft away.")
     frames.extend([fr] * SLOW)
-fr = compose(video_panel(get_frame(rel + n_fl), 9, True), schematic(9, True), CFG["final"])
+fb = get_frame_B(relB + int(round(n_fl * fpsB / fps))) if OVERLAY else None
+fr = compose(video_panel(get_frame(rel + n_fl), 9, True, fb), schematic(9, True), CFG["final"])
 frames.extend([fr] * int(HOLD_S * OUT_FPS))
 tmp = "tunnel/clip/_raw.avi"
 vw = cv2.VideoWriter(tmp, cv2.VideoWriter_fourcc(*"MJPG"), OUT_FPS, (W, H))

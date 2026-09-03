@@ -19,6 +19,6 @@
   "A": 0.062,
   "B": 0.066
  },
- "subtitle": "Both pitches drawn on the first pitch's video. Dashed = the path he was aiming for (catcher's target). Solid = the path he threw. x = target.",
- "pre": "Sinker first. The orange ball is the NEXT pitch, a sweeper, overlaid at the same time after release."
+ "subtitle": "Both pitches' real footage overlaid, synced at release. Dashed = the path he was aiming for (catcher's target). Solid = the path he threw. x = target.",
+ "pre": "Sinker and sweeper, same at-bat, overlaid at 50% each and synced at release."
 }
