@@ -1,0 +1,24 @@
+{
+ "game": 776739,
+ "pids": {
+  "A": "427d0976-d8c4-33d3-b5be-d4d268d3e4af",
+  "B": "19e7ef08-f22a-3a40-87e0-c6a780770eff"
+ },
+ "clips": {
+  "A": "WA",
+  "B": "WB"
+ },
+ "title": "A designed tunnel: Zack Wheeler vs Riley Adams, Aug 15 2025",
+ "labels": {
+  "A": "Blue: pitch 1, sinker, 93 mph. Fouled off.",
+  "B": "Orange: pitch 2, sweeper, 82 mph. Called strike."
+ },
+ "final": "Same corridor for 200 ms, then 17 in apart at the plate. The catcher's targets were 19 in apart. Both pitches landed within 4 in of their target.",
+ "out": "designed_tunnel_wheeler",
+ "t_offset": {
+  "A": 0.062,
+  "B": 0.066
+ },
+ "subtitle": "Both pitches drawn on the first pitch's video. Dashed = the path he was aiming for (catcher's target). Solid = the path he threw. x = target.",
+ "pre": "Sinker first. The orange ball is the NEXT pitch, a sweeper, overlaid at the same time after release."
+}
