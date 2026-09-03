@@ -3,3 +3,7 @@ tunnel/out/*.csv.gz
 tunnel/out/*.log
 tunnel/__pycache__/
 tunnel/clip/
+tunnel/thread/
+tunnel/thread_figs.py
+tunnel/thread_figs2.py
+tunnel/make_clip.py
