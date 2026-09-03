@@ -1,0 +1,25 @@
+Split-half repeatability, 2025, null level = game_type, halves = pitcher's games by date
+
+[pitcher_id] min pairs per half 100: 494 groups
+  ti    raw score r= 0.865 | excess over null r= 0.348 (weighted  0.381, Spearman-Brown full-season 0.516) | mean excess h1 +0.0080 h2 +0.0056
+  ta    raw score r= 0.574 | excess over null r= 0.019 (weighted  0.018, Spearman-Brown full-season 0.037) | mean excess h1 +0.0122 h2 +0.0136
+  ti40  raw score r= 0.889 | excess over null r= 0.250 (weighted  0.302, Spearman-Brown full-season 0.400) | mean excess h1 -0.0167 h2 -0.0179
+  ta40  raw score r= 0.748 | excess over null r= 0.157 (weighted  0.210, Spearman-Brown full-season 0.272) | mean excess h1 +0.0248 h2 +0.0254
+
+[pitcher_id] min pairs per half 300: 184 groups
+  ti    raw score r= 0.871 | excess over null r= 0.397 (weighted  0.411, Spearman-Brown full-season 0.568) | mean excess h1 +0.0091 h2 +0.0085
+  ta    raw score r= 0.654 | excess over null r= 0.062 (weighted  0.034, Spearman-Brown full-season 0.116) | mean excess h1 +0.0151 h2 +0.0146
+  ti40  raw score r= 0.888 | excess over null r= 0.275 (weighted  0.333, Spearman-Brown full-season 0.432) | mean excess h1 -0.0147 h2 -0.0156
+  ta40  raw score r= 0.808 | excess over null r= 0.350 (weighted  0.350, Spearman-Brown full-season 0.518) | mean excess h1 +0.0299 h2 +0.0289
+
+[pair_type] min pairs per half 500: 55 groups
+  ti    raw score r= 0.993 | excess over null r= 0.874 (weighted  0.910, Spearman-Brown full-season 0.933) | mean excess h1 +0.0107 h2 +0.0076
+  ta    raw score r= 0.968 | excess over null r= 0.586 (weighted  0.775, Spearman-Brown full-season 0.739) | mean excess h1 +0.0167 h2 +0.0183
+  ti40  raw score r= 0.994 | excess over null r= 0.912 (weighted  0.950, Spearman-Brown full-season 0.954) | mean excess h1 -0.0118 h2 -0.0128
+  ta40  raw score r= 0.972 | excess over null r= 0.576 (weighted  0.778, Spearman-Brown full-season 0.731) | mean excess h1 +0.0299 h2 +0.0302
+
+[pair_type] min pairs per half 2000: 30 groups
+  ti    raw score r= 0.987 | excess over null r= 0.886 (weighted  0.924, Spearman-Brown full-season 0.939) | mean excess h1 +0.0117 h2 +0.0102
+  ta    raw score r= 0.982 | excess over null r= 0.828 (weighted  0.875, Spearman-Brown full-season 0.906) | mean excess h1 +0.0161 h2 +0.0143
+  ti40  raw score r= 0.993 | excess over null r= 0.941 (weighted  0.963, Spearman-Brown full-season 0.969) | mean excess h1 -0.0109 h2 -0.0110
+  ta40  raw score r= 0.984 | excess over null r= 0.875 (weighted  0.909, Spearman-Brown full-season 0.933) | mean excess h1 +0.0295 h2 +0.0270

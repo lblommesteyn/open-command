@@ -1,0 +1,4 @@
+Target-noise sensitivity, 2025, evaluation half, frozen primary thresholds (23.8 ft).
+  sigma 0.0: lift 3.23x, P(actual|intent)=0.501, share intent-tunnel 0.245
+  sigma 2.0: lift 3.04x, P(actual|intent)=0.495, share intent-tunnel 0.231; corr(noisy, base ts_intent) 0.783; intent-label agreement 0.906
+  sigma 4.0: lift 2.74x, P(actual|intent)=0.488, share intent-tunnel 0.200; corr(noisy, base ts_intent) 0.541; intent-label agreement 0.839

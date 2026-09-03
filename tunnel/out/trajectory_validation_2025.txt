@@ -1,0 +1,7 @@
+Trajectory reconstruction validation, 2025: n=724005
+plate crossing error vs recorded plate_x/plate_z (inches):
+  median 0.0024  p90 0.0062  p99 0.0095  max 0.225
+  |dx| median 0.0009   |dz| median 0.0020
+  rows with error > 1 in: 0  (0.000%)
+  nan times: 0
+time to plate median 0.3858s; time at y=23.8 median 0.2040s

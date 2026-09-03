@@ -1,0 +1,7 @@
+Cross-season repeatability 2025 vs 2024, excess over same-game null at 23.8 ft (ti) and 40 ft (ti40)
+[pitcher, game_type] min pairs 100: 417 pitchers
+  ti    raw r= 0.534 | excess r= 0.151 | mean excess 2025 +0.0423 2024 +0.0060
+  ta    raw r= 0.488 | excess r=-0.054 | mean excess 2025 +0.0515 2024 +0.0118
+[pitcher, game_type] min pairs 300: 295 pitchers
+  ti    raw r= 0.583 | excess r= 0.165 | mean excess 2025 +0.0394 2024 +0.0063
+  ta    raw r= 0.531 | excess r=-0.126 | mean excess 2025 +0.0464 2024 +0.0133

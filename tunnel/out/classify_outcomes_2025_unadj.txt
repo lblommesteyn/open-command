@@ -1,0 +1,59 @@
+Classification, 2025_unadj. Exploratory half: 222568 pairs before 2025-06-28; evaluation half: 225149 pairs.
+Tunnel = score >= exploratory 75th percentile AND plate separation >= 6.0 in.
+
+Frozen thresholds and label shares on the evaluation half, by checkpoint:
+checkpoint thr_intent thr_actual | designed accidental failed neither | P(actual tunnel | intent tunnel) P(actual | no intent) lift
+     y50    2.128    2.350 | 0.081 0.166 0.137 0.616 | 0.370 0.212 1.75x
+     y45    1.697    1.883 | 0.096 0.148 0.131 0.625 | 0.423 0.192 2.21x
+     y40    1.414    1.550 | 0.111 0.132 0.135 0.622 | 0.450 0.175 2.58x
+     y35    1.281    1.293 | 0.115 0.127 0.134 0.624 | 0.460 0.169 2.73x
+     y30    1.165    1.075 | 0.116 0.125 0.132 0.627 | 0.468 0.166 2.82x
+     y25    1.037    0.875 | 0.117 0.124 0.129 0.630 | 0.474 0.164 2.89x
+   y23.8    1.003    0.830 | 0.116 0.123 0.129 0.631 | 0.474 0.164 2.90x
+     y20    0.885    0.686 | 0.115 0.123 0.125 0.637 | 0.479 0.161 2.97x
+     y15    0.696    0.499 | 0.112 0.122 0.118 0.647 | 0.487 0.159 3.06x
+     y10    0.462    0.314 | 0.107 0.123 0.107 0.662 | 0.500 0.157 3.18x
+      y5    0.196    0.131 | 0.100 0.124 0.098 0.678 | 0.505 0.154 3.27x
+
+Primary checkpoint y23.8: label counts, evaluation half:
+label
+neither       142133
+failed         29056
+accidental     27805
+designed       26155
+
+Most common pair types by label (evaluation half):
+  designed: FF>SL 3233, SL>FF 2890, FF>CU 1462, FF>CH 1429, CU>FF 1382, CH>FF 1283
+  accidental: FF>SL 1829, SL>FF 1795, CH>FF 1279, FF>CH 1263, CU>FF 1238, FF>CU 1219
+  failed: FF>SL 3159, SL>FF 2836, FF>CH 2255, CH>FF 1971, SI>SL 1070, SL>SI 925
+
+Outcomes on pitch B, evaluation half (raw rates):
+             swing_B  whiff_given_swing  called_given_take  inplay_B  zone_B       n
+label                                                                               
+accidental  0.567596             0.2439             0.0948  0.207373  0.4359   27805
+designed    0.573695             0.2610             0.0772  0.202065  0.4011   26155
+failed       0.52712             0.2113             0.1109  0.205741  0.4618   29056
+neither     0.526204             0.2274             0.1264  0.191265  0.4680  142133
+
+Designed vs accidental (actual tunnels only), pitcher fixed effects, cluster-robust SE by pitcher.
+Controls: pair type, count, hand matchup, velo_B, actual tunnel score + actual plate separation (visual similarity); second row adds zone_B.
+  swing_B                  n= 53960  designed effect = +0.0162 (SE 0.0046, z=+3.52)
+  swing_B            +zone n= 53960  designed effect = +0.0162 (SE 0.0043, z=+3.80)
+  whiff_given_swing        n= 30787  designed effect = +0.0047 (SE 0.0053, z=+0.90)
+  whiff_given_swing  +zone n= 30787  designed effect = +0.0018 (SE 0.0050, z=+0.36)
+  called_given_take        n= 53960  designed effect = -0.0014 (SE 0.0025, z=-0.53)
+  called_given_take  +zone n= 53960  designed effect = -0.0013 (SE 0.0025, z=-0.54)
+  inplay_B                 n= 53960  designed effect = +0.0051 (SE 0.0039, z=+1.31)
+  inplay_B           +zone n= 53960  designed effect = +0.0051 (SE 0.0036, z=+1.40)
+
+Intent tunnel (designed+failed) vs not, ALL evaluation pairs, same controls (does intended tunneling pay regardless of execution?):
+  swing_B            n=225149  effect = +0.0169 (SE 0.0027, z=+6.31)
+  whiff_given_swing  n=120894  effect = +0.0013 (SE 0.0030, z=+0.43)
+  called_given_take  n=225149  effect = -0.0079 (SE 0.0017, z=-4.70)
+  inplay_B           n=225149  effect = +0.0084 (SE 0.0023, z=+3.64)
+
+Continuous version: outcome on ts_intent (primary) with ts_actual + controls + zone, all evaluation pairs:
+  swing_B            n=225149  per unit ts_intent = +0.0124 (SE 0.0017)   per unit ts_actual = +0.0586 (SE 0.0020)
+  whiff_given_swing  n=120894  per unit ts_intent = -0.0012 (SE 0.0019)   per unit ts_actual = +0.0106 (SE 0.0021)
+  called_given_take  n=225149  per unit ts_intent = -0.0061 (SE 0.0011)   per unit ts_actual = -0.0128 (SE 0.0013)
+  inplay_B           n=225149  per unit ts_intent = +0.0052 (SE 0.0014)   per unit ts_actual = +0.0142 (SE 0.0018)

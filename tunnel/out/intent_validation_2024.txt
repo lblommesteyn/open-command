@@ -1,0 +1,16 @@
+Intent model validation (2024): scored 641071 of 655879 pitches (cells with >= 20 train pitches)
+checkpoint | shape-model residual median (in) [P(actual plate) vs actual] | intent residual median (in) [P(target) vs actual] | target-plate miss
+     y50 |   1.85 |   2.21 |  10.05
+     y45 |   1.70 |   2.73 |  10.05
+     y40 |   1.57 |   3.40 |  10.05
+     y35 |   1.44 |   4.14 |  10.05
+     y30 |   1.30 |   4.93 |  10.05
+     y25 |   1.15 |   5.77 |  10.05
+   y23.8 |   1.11 |   5.97 |  10.05
+     y20 |   0.97 |   6.63 |  10.05
+     y15 |   0.76 |   7.52 |  10.05
+     y10 |   0.51 |   8.43 |  10.05
+      y5 |   0.23 |   9.37 |  10.05
+   plate |   0.00 |  10.05 |  10.05
+Held-out plate residual of intent trajectory vs target (should be ~0 by construction at plate):
+  median 0.003 in, p90 0.004
